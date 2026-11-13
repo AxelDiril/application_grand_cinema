@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Movie;
+use App\Models\Screening;
 
 class MovieController extends Controller
 {
@@ -41,6 +42,11 @@ class MovieController extends Controller
             return view('pages/message', compact('strMessage','strLink','strLinkMessage'));
         }
 
-        return view('pages/movie', compact('objMovie'));
+        $arScreenings = Screening::where('movie_id', $movie_id)
+            ->where('screening_date', '>=', now())
+            ->orderBy('screening_date', 'asc')
+            ->get();
+
+        return view('pages/movie', compact('objMovie','arScreenings'));
     }
 }

@@ -8,3 +8,14 @@ Description :
 @else
     {{ $objMovie->description }}
 @endif
+
+<h2>Prochaines séances :</h2>
+
+@if ($arScreenings->isEmpty())
+    Aucune séance prévue.
+@else
+    @foreach($arScreenings as $screening)
+        Le {{ $screening->screening_date }} à {{ $screening->room->room_name }}
+        <br>
+    @endforeach
+@endif

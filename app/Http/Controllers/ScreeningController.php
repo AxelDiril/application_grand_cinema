@@ -12,9 +12,7 @@ class ScreeningController extends Controller
      */
     public function getScreeningsList()
     {
-        $arScreenings = Screening::with('movie');
-        $arScreenings = Screening::with('room');
-        $arScreenings = $arScreenings->get();
+        $arScreenings = Screening::with(['movie', 'room'])->get();
 
         return view('pages/screenings_list', compact('arScreenings'));
     }
