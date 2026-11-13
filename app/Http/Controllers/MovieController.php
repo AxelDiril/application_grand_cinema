@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Movie;
+use App\Models\Genre;
 use App\Models\Screening;
 
 class MovieController extends Controller
@@ -13,13 +14,30 @@ class MovieController extends Controller
      *
      * @return \Illuminate\View\View La vue affichant tous les films.
      */
-    public function getMovieList()
+    public function getMovieList(Request $request)
     {
+        $strName = $request->query('movie_name');
+        $iGenreId = $request->query('genre_id');
         
         $arMovies = Movie::query();
+
+        // Filtre par nom du film
+        if (!empty($strName) && $strName != "all") {
+            $arMovies->where('movie_name', 'LIKE', '%' . $strName . '%');
+        }
+
+        // Filtre par genre
+        if (!empty($iGenreId) && $iGenreId != "all") {
+            $arMovies->whereHas('genres', function ($query) use ($iGenreId) {
+            $query->where('genres.genre_id', $iGenreId);
+            });
+        }
+
         $arMovies = $arMovies->get();
 
-        return view('pages/movies_list', compact('arMovies'));
+        $arGenres = Genre::get();
+
+        return view('pages/movies_list', compact('arMovies','arGenres','strName','iGenreId'));
     }
 
     /**
