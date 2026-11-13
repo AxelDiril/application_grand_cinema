@@ -3,62 +3,44 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\Movie;
 
 class MovieController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Récupère la liste des films de la table movies pour les envoyer à la vue movie_list.
+     *
+     * @return \Illuminate\View\View La vue affichant tous les films.
      */
-    public function index()
+    public function getMovieList()
     {
-        //
+        
+        $arMovies = Movie::query();
+        $arMovies = $arMovies->get();
+
+        return view('pages/movies_list', compact('arMovies'));
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Récupère les détails d'un film à afficher à partir de son movie_id et les affiche
+     * dans la vue /movie/
+     *
+     * @param  int  $movie_id L'ID du film à afficher dans la vue.
+     * @return \Illuminate\View\View La vue affichant les détails du film.
      */
-    public function create()
+    public function getMovie($movie_id)
     {
-        //
-    }
+        $objMovie = Movie::find($movie_id);
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
-    }
+        // Vérifier si le film existe, sinon rediriger vers une page d'erreur
+        if($objMovie == null){
+            $strMessage = "Ce film n'existe pas.";
+            $strLink = "/";
+            $strLinkMessage = "Retour à la page d'accueil.";
+            
+            return view('pages/message', compact('strMessage','strLink','strLinkMessage'));
+        }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        return view('pages/movie', compact('objMovie'));
     }
 }
