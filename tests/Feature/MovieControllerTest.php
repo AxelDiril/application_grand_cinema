@@ -10,7 +10,9 @@ class MovieControllerTest extends TestCase
 {
     use DatabaseTransactions;
 
-    // Test 1 : afficher la liste des films
+    /**
+     * Test 1 : Vérifier qu'un film présent dans la table movies apparaît dans la liste complète.
+     */
     public function test_get_movie_list()
     {
         $movie = Movie::create([
@@ -31,7 +33,9 @@ class MovieControllerTest extends TestCase
         );
     }
 
-    // Test 2 : afficher une liste vide
+    /**
+     * Test 2 : Vérifier qu'aucun film soit dans la table movies.
+     */
     public function test_get_movie_list_empty()
     {
         $response = $this->get('/movies_list');
@@ -44,7 +48,10 @@ class MovieControllerTest extends TestCase
         });
     }
 
-    // Test 3 : afficher un film existant
+    /**
+     * Test 3 : Vérifier qu'un film présent dans la table movies puisse être récupéré pour
+     * afficher ses détails dans la vue.
+     */
     public function test_get_movie()
     {
         $movie = Movie::create([
@@ -64,7 +71,9 @@ class MovieControllerTest extends TestCase
         });
     }
 
-    // Test 4 : afficher un message si le film n'existe pas
+    /**
+     * Test 4 : Vérifier que l'accès à un film qui n'existe pas redirige vers un message d'erreur.
+     */
     public function test_get_movie_unknown()
     {
         $this->assertNull(Movie::find(999999));

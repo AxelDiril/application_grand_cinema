@@ -8,7 +8,9 @@ use App\Models\Movie;
 class MovieController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Récupère la liste des films de la table movies pour les envoyer à la vue movie_list.
+     *
+     * @return \Illuminate\View\View La vue affichant tous les films.
      */
     public function getMovieList()
     {
@@ -19,10 +21,18 @@ class MovieController extends Controller
         return view('pages/movies_list', compact('arMovies'));
     }
 
+    /**
+     * Récupère les détails d'un film à afficher à partir de son movie_id et les affiche
+     * dans la vue /movie/
+     *
+     * @param  int  $movie_id L'ID du film à afficher dans la vue.
+     * @return \Illuminate\View\View La vue affichant les détails du film.
+     */
     public function getMovie($movie_id)
     {
         $objMovie = Movie::find($movie_id);
 
+        // Vérifier si le film existe, sinon rediriger vers une page d'erreur
         if($objMovie == null){
             $strMessage = "Ce film n'existe pas.";
             $strLink = "/";
