@@ -18,4 +18,19 @@ class MovieController extends Controller
 
         return view('pages/movies_list', compact('arMovies'));
     }
+
+    public function getMovie($movie_id)
+    {
+        $objMovie = Movie::find($movie_id);
+
+        if($objMovie == null){
+            $strMessage = "Ce film n'existe pas.";
+            $strLink = "/";
+            $strLinkMessage = "Retour à la page d'accueil.";
+            
+            return view('pages/message', compact('strMessage','strLink','strLinkMessage'));
+        }
+
+        return view('pages/movie', compact('objMovie'));
+    }
 }
