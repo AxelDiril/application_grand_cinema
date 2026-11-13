@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Model;
  * 
  * @property int $screening_id
  * @property Carbon $screening_date
- * @property int $salle_id
+ * @property int $room_id
  * @property int $movie_id
  *
  * @package App\Models
@@ -27,13 +27,13 @@ class Screening extends Model
 
 	protected $casts = [
 		'screening_date' => 'datetime',
-		'salle_id' => 'int',
+		'room_id' => 'int',
 		'movie_id' => 'int'
 	];
 
 	protected $fillable = [
 		'screening_date',
-		'salle_id',
+		'room_id',
 		'movie_id'
 	];
 }
