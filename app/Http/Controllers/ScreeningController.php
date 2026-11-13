@@ -8,7 +8,10 @@ use App\Models\Screening;
 class ScreeningController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Récupère la liste des séances et les affiche avec le nom du film et la salle où ils seront
+     * diffusés.
+     *
+     * @return \Illuminate\View\View La vue affichant les détails et séances du film.
      */
     public function getScreeningsList()
     {
