@@ -12,6 +12,10 @@ use Illuminate\Foundation\Testing\DatabaseTransactions;
 class ScreeningControllerTest extends TestCase
 {
 
+    use DatabaseTransactions;
+
+    // Propriétés privées utilisées par les tests
+
     private $movie1;
     private $movie2;
     private $room1;
@@ -21,8 +25,9 @@ class ScreeningControllerTest extends TestCase
     private $screening1;
     private $screening2;
 
-    use DatabaseTransactions;
-
+    /**
+     * Création des données communes avant chaque test.
+     */
     protected function setUp(): void
     {
         parent::setUp();
@@ -120,7 +125,9 @@ class ScreeningControllerTest extends TestCase
         });
     }
 
-    // Test du filtre par nom du film
+    /** 
+    * Test 3 : Vérifier le du filtre par nom du film.
+    */
     public function test_filter_screenings_by_movie_name()
     {
         $response = $this->get('/screenings_list?movie_name=Film Test A');
@@ -132,7 +139,9 @@ class ScreeningControllerTest extends TestCase
         });
     }
 
-    // Test du filtre par genre
+    /*
+    * Test 4 : Vérifier le filtre par genre.
+    */
     public function test_filter_screenings_by_genre()
     {
         $response = $this->get('/screenings_list?genre_id=' . $this->genre1->genre_id);
@@ -144,7 +153,9 @@ class ScreeningControllerTest extends TestCase
         });
     }
 
-    // Test du filtre par salle
+    /*
+    * Test 5 : Vérifier le filtre par salle.
+    */
     public function test_filter_screenings_by_room()
     {
         $response = $this->get('/screenings_list?room_id=' . $this->room1->room_id);
@@ -156,7 +167,10 @@ class ScreeningControllerTest extends TestCase
         });
     }
 
-    // Test du filtre par date
+    /*
+    * Test 6 : Vérifier le filtre par date.
+    */
+
     public function test_filter_screenings_by_date()
     {
         $response = $this->get('/screenings_list?screening_date=2026-12-10');
@@ -168,7 +182,10 @@ class ScreeningControllerTest extends TestCase
         });
     }
 
-    // Test de plusieurs filtres simultanés
+    /*
+    * Test 7 : Vérifier plusieurs filtres simultanés.
+    */
+    
     public function test_filter_screenings_with_multiple_filters()
     {
         $response = $this->get(
@@ -185,7 +202,9 @@ class ScreeningControllerTest extends TestCase
         });
     }
 
-    // Test de la conservation des valeurs des filtres dans la vue
+    /*
+    * Test 8 : Vérifier l'envoi des valeurs des filtres dans la vue.
+    */ 
     public function test_filter_values_are_returned_to_view()
     {
         $response = $this->get('/screenings_list?movie_name=Film Test A'

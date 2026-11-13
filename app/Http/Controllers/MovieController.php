@@ -11,7 +11,9 @@ class MovieController extends Controller
 {
     /**
      * Récupère la liste des films de la table movies pour les envoyer à la vue movie_list.
+     * Des filtres peuvent être appliqués par nom et par genre pour affiner la recherche.
      *
+     * @param Request  $request Les paramètres de filtres de la requête.
      * @return \Illuminate\View\View La vue affichant tous les films.
      */
     public function getMovieList(Request $request)

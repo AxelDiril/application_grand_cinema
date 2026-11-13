@@ -12,7 +12,9 @@ class ScreeningController extends Controller
     /**
      * Récupère la liste des séances et les affiche avec le nom du film et la salle où ils seront
      * diffusés.
+     * Des filtres peuvent être appliqués par nom, genre, salle et date pour affiner la recherche.
      *
+     * @param Request  $request Les paramètres de filtres de la requête.
      * @return \Illuminate\View\View La vue affichant les détails et séances du film.
      */
     public function getScreeningsList(Request $request)
