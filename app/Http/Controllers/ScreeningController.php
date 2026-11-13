@@ -3,62 +3,20 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\Screening;
 
 class ScreeningController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Récupère la liste des séances et les affiche avec le nom du film et la salle où ils seront
+     * diffusés.
+     *
+     * @return \Illuminate\View\View La vue affichant les détails et séances du film.
      */
-    public function index()
+    public function getScreeningsList()
     {
-        //
-    }
+        $arScreenings = Screening::with(['movie', 'room'])->get();
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        return view('pages/screenings_list', compact('arScreenings'));
     }
 }

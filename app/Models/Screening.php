@@ -36,4 +36,12 @@ class Screening extends Model
 		'room_id',
 		'movie_id'
 	];
+
+	public function movie(){
+		return $this->belongsTo(Movie::class, 'movie_id', 'movie_id');
+	}
+
+	public function room(){
+		return $this->belongsTo(Room::class, 'room_id', 'room_id');
+	}
 }

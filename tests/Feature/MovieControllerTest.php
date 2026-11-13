@@ -4,6 +4,9 @@ namespace Tests\Feature;
 
 use Tests\TestCase;
 use App\Models\Movie;
+use App\Models\Screening;
+use App\Models\Room;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 
 class MovieControllerTest extends TestCase
@@ -83,5 +86,99 @@ class MovieControllerTest extends TestCase
         $response->assertStatus(200);
         $response->assertViewIs('pages.message');
         $response->assertViewHas('strMessage', "Ce film n'existe pas.");
+    }
+
+    /**
+     * Test 5 : Vérifier que seules les prochaines séances s'affichent et non les anciennes.
+     */
+    public function test_get_movie_next_screenings()
+    {
+        $movie = Movie::create([
+            'movie_name' => 'Le Film Test',
+            'director' => 'Jean Dupont',
+            'duration_minutes' => 120,
+            'description' => 'Description du film.'
+        ]);
+
+        $room = Room::create([
+            'room_name' => 'Salle Test',
+            'capacity' => 100
+        ]);
+
+        // Séance passée
+        $screening1 = Screening::create([
+            'movie_id' => $movie->movie_id,
+            'room_id' => $room->room_id,
+            'screening_date' => Carbon::now()->subDay()
+        ]);
+
+        // Séance future
+        $screening2 = Screening::create([
+            'movie_id' => $movie->movie_id,
+            'room_id' => $room->room_id,
+            'screening_date' => Carbon::now()->addDay()
+        ]);
+
+        $response = $this->get('/movie/' . $movie->movie_id);
+
+        $response->assertStatus(200);
+        $response->assertViewIs('pages.movie');
+
+        $response->assertViewHas('arScreenings', function ($screenings) use (
+            $screening1,
+            $screening2
+        ) {
+            return $screenings->contains('screening_id', $screening2->screening_id)
+                && !$screenings->contains('screening_id', $screening1->screening_id);
+        });
+    }
+
+    /**
+     * Test 6 : Vérifier que les séances correspondent bien au film choisi.
+     */
+    public function test_get_movie_screenings_of_selected_movie()
+    {
+        $movie1 = Movie::create([
+            'movie_name' => 'Film numéro 1',
+            'director' => 'Jean Dupont',
+            'duration_minutes' => 100,
+            'description' => 'Description du film 1.'
+        ]);
+
+        $movie2 = Movie::create([
+            'movie_name' => 'Film numéro 2',
+            'director' => 'Paul Martin',
+            'duration_minutes' => 110,
+            'description' => 'Description du film 2.'
+        ]);
+
+        $room = Room::create([
+            'room_name' => 'Salle Test',
+            'capacity' => 100
+        ]);
+
+        $screening1 = Screening::create([
+            'movie_id' => $movie1->movie_id,
+            'room_id' => $room->room_id,
+            'screening_date' => Carbon::now()->addDay()
+        ]);
+
+        $screening2 = Screening::create([
+            'movie_id' => $movie2->movie_id,
+            'room_id' => $room->room_id,
+            'screening_date' => Carbon::now()->addDay()
+        ]);
+
+        $response = $this->get('/movie/' . $movie1->movie_id);
+
+        $response->assertStatus(200);
+
+        $response->assertViewHas('arScreenings', function ($screenings) use (
+            $screening1,
+            $screening2
+        ) {
+            return $screenings->contains('screening_id', $screening1->screening_id)
+                && !$screenings->contains('screening_id', $screening2->screening_id);
+        });
     }
 }
