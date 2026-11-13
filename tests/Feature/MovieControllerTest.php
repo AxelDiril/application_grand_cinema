@@ -6,6 +6,7 @@ use Tests\TestCase;
 use App\Models\Movie;
 use App\Models\Screening;
 use App\Models\Room;
+use App\Models\Genre;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 
@@ -13,34 +14,118 @@ class MovieControllerTest extends TestCase
 {
     use DatabaseTransactions;
 
+    // Propriétés privées utilisées par les tests
+    private $movie1;
+    private $movie2;
+    private $room1;
+    private $genre1;
+    private $genre2;
+    private $screening1;
+    private $screening2;
+    private $screeningPast;
+
     /**
-     * Test 1 : Vérifier qu'un film présent dans la table movies apparaît dans la liste complète.
+     * Création des données communes avant chaque test.
      */
-    public function test_get_movie_list()
+    protected function setUp(): void
     {
-        $movie = Movie::create([
+        parent::setUp();
+
+        // Création des films
+        $this->movie1 = Movie::create([
             'movie_name' => 'Le Dîner Impossible',
             'director' => 'Maxime Roux',
             'duration_minutes' => 101,
             'description' => 'Un repas de famille tourne à la catastrophe.'
         ]);
 
+        $this->movie2 = Movie::create([
+            'movie_name' => 'Les Petits Explorateurs',
+            'director' => 'Pauline Chevalier',
+            'duration_minutes' => 79,
+            'description' => 'Trois enfants partent à la recherche d’un trésor.'
+        ]);
+
+        // Création des genres
+        $this->genre1 = Genre::create([
+            'genre_label' => 'Action'
+        ]);
+
+        $this->genre2 = Genre::create([
+            'genre_label' => 'Comédie'
+        ]);
+
+        // Association des genres aux films
+        $this->movie1->genres()->attach($this->genre1->genre_id);
+        $this->movie2->genres()->attach($this->genre2->genre_id);
+
+        // Création de la salle
+        $this->room1 = Room::create([
+            'room_name' => 'Salle Test',
+            'capacity' => 100
+        ]);
+
+        // Séance future du premier film
+        $this->screening1 = Screening::create([
+            'movie_id' => $this->movie1->movie_id,
+            'room_id' => $this->room1->room_id,
+            'screening_date' => Carbon::now()->addDay()
+        ]);
+
+        // Séance future du deuxième film
+        $this->screening2 = Screening::create([
+            'movie_id' => $this->movie2->movie_id,
+            'room_id' => $this->room1->room_id,
+            'screening_date' => Carbon::now()->addDays(2)
+        ]);
+
+        // Séance passée du premier film
+        $this->screeningPast = Screening::create([
+            'movie_id' => $this->movie1->movie_id,
+            'room_id' => $this->room1->room_id,
+            'screening_date' => Carbon::now()->subDay()
+        ]);
+    }
+
+    /**
+     * Test 1 : Vérifie qu'un film apparaît dans la liste complète.
+     */
+    public function test_get_movie_list()
+    {
         $response = $this->get('/movies_list');
 
         $response->assertStatus(200);
         $response->assertViewIs('pages.movies_list');
-        $response->assertViewHas('arMovies');
 
-        $this->assertTrue(
-            $response->viewData('arMovies')->contains('movie_id', $movie->movie_id)
-        );
+        $response->assertViewHas('arMovies', function ($movies) {
+            return $movies->contains(
+                'movie_id',
+                $this->movie1->movie_id
+            );
+        });
     }
 
     /**
-     * Test 2 : Vérifier qu'aucun film soit dans la table movies.
+     * Test 2 : Vérifie qu'aucun film n'apparaît dans la liste.
      */
     public function test_get_movie_list_empty()
     {
+        // Suppression des séances associées aux films de setUp()
+        Screening::whereIn('movie_id', [
+            $this->movie1->movie_id,
+            $this->movie2->movie_id
+        ])->delete();
+
+        // Suppression des associations entre films et genres
+        $this->movie1->genres()->detach();
+        $this->movie2->genres()->detach();
+
+        // Suppression des films
+        Movie::whereIn('movie_id', [
+            $this->movie1->movie_id,
+            $this->movie2->movie_id
+        ])->delete();
+
         $response = $this->get('/movies_list');
 
         $response->assertStatus(200);
@@ -52,30 +137,22 @@ class MovieControllerTest extends TestCase
     }
 
     /**
-     * Test 3 : Vérifier qu'un film présent dans la table movies puisse être récupéré pour
-     * afficher ses détails dans la vue.
+     * Test 3 : Vérifie qu'un film puisse être récupéré pour afficher ses détails.
      */
     public function test_get_movie()
     {
-        $movie = Movie::create([
-            'movie_name' => 'Les Petits Explorateurs',
-            'director' => 'Pauline Chevalier',
-            'duration_minutes' => 79,
-            'description' => 'Trois enfants partent à la recherche d’un trésor.'
-        ]);
-
-        $response = $this->get('/movie/' . $movie->movie_id);
+        $response = $this->get('/movie/' . $this->movie1->movie_id);
 
         $response->assertStatus(200);
         $response->assertViewIs('pages.movie');
 
-        $response->assertViewHas('objMovie', function ($objMovie) use ($movie) {
-            return $objMovie->movie_id === $movie->movie_id;
+        $response->assertViewHas('objMovie', function ($objMovie) {
+            return $objMovie->movie_id === $this->movie1->movie_id;
         });
     }
 
     /**
-     * Test 4 : Vérifier que l'accès à un film qui n'existe pas redirige vers un message d'erreur.
+     * Test 4 : Vérifie qu'un film inexistant affiche un message d'erreur.
      */
     public function test_get_movie_unknown()
     {
@@ -89,96 +166,95 @@ class MovieControllerTest extends TestCase
     }
 
     /**
-     * Test 5 : Vérifier que seules les prochaines séances s'affichent et non les anciennes.
+     * Test 5 : Vérifie que seules les prochaines séances sont affichées.
      */
     public function test_get_movie_next_screenings()
     {
-        $movie = Movie::create([
-            'movie_name' => 'Le Film Test',
-            'director' => 'Jean Dupont',
-            'duration_minutes' => 120,
-            'description' => 'Description du film.'
-        ]);
-
-        $room = Room::create([
-            'room_name' => 'Salle Test',
-            'capacity' => 100
-        ]);
-
-        // Séance passée
-        $screening1 = Screening::create([
-            'movie_id' => $movie->movie_id,
-            'room_id' => $room->room_id,
-            'screening_date' => Carbon::now()->subDay()
-        ]);
-
-        // Séance future
-        $screening2 = Screening::create([
-            'movie_id' => $movie->movie_id,
-            'room_id' => $room->room_id,
-            'screening_date' => Carbon::now()->addDay()
-        ]);
-
-        $response = $this->get('/movie/' . $movie->movie_id);
+        $response = $this->get('/movie/' . $this->movie1->movie_id);
 
         $response->assertStatus(200);
         $response->assertViewIs('pages.movie');
 
-        $response->assertViewHas('arScreenings', function ($screenings) use (
-            $screening1,
-            $screening2
-        ) {
-            return $screenings->contains('screening_id', $screening2->screening_id)
-                && !$screenings->contains('screening_id', $screening1->screening_id);
+        $response->assertViewHas('arScreenings', function ($screenings) {
+            return $screenings->contains(
+                'screening_id',
+                $this->screening1->screening_id
+            )
+            && !$screenings->contains(
+                'screening_id',
+                $this->screeningPast->screening_id
+            );
         });
     }
 
     /**
-     * Test 6 : Vérifier que les séances correspondent bien au film choisi.
+     * Test 6 : Vérifie que les séances correspondent au film choisi.
      */
     public function test_get_movie_screenings_of_selected_movie()
     {
-        $movie1 = Movie::create([
-            'movie_name' => 'Film numéro 1',
-            'director' => 'Jean Dupont',
-            'duration_minutes' => 100,
-            'description' => 'Description du film 1.'
-        ]);
-
-        $movie2 = Movie::create([
-            'movie_name' => 'Film numéro 2',
-            'director' => 'Paul Martin',
-            'duration_minutes' => 110,
-            'description' => 'Description du film 2.'
-        ]);
-
-        $room = Room::create([
-            'room_name' => 'Salle Test',
-            'capacity' => 100
-        ]);
-
-        $screening1 = Screening::create([
-            'movie_id' => $movie1->movie_id,
-            'room_id' => $room->room_id,
-            'screening_date' => Carbon::now()->addDay()
-        ]);
-
-        $screening2 = Screening::create([
-            'movie_id' => $movie2->movie_id,
-            'room_id' => $room->room_id,
-            'screening_date' => Carbon::now()->addDay()
-        ]);
-
-        $response = $this->get('/movie/' . $movie1->movie_id);
+        $response = $this->get('/movie/' . $this->movie1->movie_id);
 
         $response->assertStatus(200);
 
-        $response->assertViewHas('arScreenings', function ($screenings) use (
-            $screening1,
-            $screening2
-        ) {
-            return $screenings->contains('screening_id', $screening1->screening_id)
-                && !$screenings->contains('screening_id', $screening2->screening_id);
+        $response->assertViewHas('arScreenings', function ($screenings) {
+            return $screenings->contains(
+                'screening_id',
+                $this->screening1->screening_id
+            )
+            && !$screenings->contains(
+                'screening_id',
+                $this->screening2->screening_id
+            );
+        });
+    }
+
+    /**
+     * Test 7 : Vérifie le filtre par nom de film.
+     */
+    public function test_filter_movies_by_name()
+    {
+        $response = $this->get('/movies_list?movie_name=Le Dîner');
+
+        $response->assertStatus(200);
+
+        $response->assertViewHas('arMovies', function ($movies) {
+            return $movies->count() === 1
+                && $movies->first()->movie_id === $this->movie1->movie_id;
+        });
+    }
+
+    /**
+     * Test 8 : Vérifie le filtre par genre.
+     */
+    public function test_filter_movies_by_genre()
+    {
+        $response = $this->get(
+            '/movies_list?genre_id=' . $this->genre1->genre_id
+        );
+
+        $response->assertStatus(200);
+
+        $response->assertViewHas('arMovies', function ($movies) {
+            return $movies->count() === 1
+                && $movies->first()->movie_id === $this->movie1->movie_id;
+        });
+    }
+
+    /**
+     * Test 9 : Vérifie la combinaison des filtres par nom et par genre.
+     */
+    public function test_filter_movies_by_name_and_genre()
+    {
+        $response = $this->get(
+            '/movies_list?movie_name=Le Dîner'
+            . '&genre_id=' . $this->genre1->genre_id
+        );
+
+        $response->assertStatus(200);
+
+        $response->assertViewHas('arMovies', function ($movies) {
+            return $movies->count() === 1
+                && $movies->first()->movie_id === $this->movie1->movie_id;
         });
     }
 }
