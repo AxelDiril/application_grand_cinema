@@ -10,8 +10,8 @@ use App\Models\Genre;
 class ScreeningController extends Controller
 {
     /**
-     * Récupère la liste des séances et les affiche avec le nom du film et la salle où ils seront
-     * diffusés.
+     * Récupère la liste des séances et les affiche avec le nom du film, la salle où ils seront
+     * diffusés et leur nombre de places disponibles.
      * Des filtres peuvent être appliqués par nom, genre, salle et date pour affiner la recherche.
      *
      * @param Request  $request Les paramètres de filtres de la requête.

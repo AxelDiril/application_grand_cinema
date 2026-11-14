@@ -28,7 +28,6 @@ class ScreeningControllerTest extends TestCase
     private $screening1;
     private $screening2;
     private $user;
-
     private $role;
 
     /**

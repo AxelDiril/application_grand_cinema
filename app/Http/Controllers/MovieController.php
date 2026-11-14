@@ -44,7 +44,8 @@ class MovieController extends Controller
 
     /**
      * Récupère les détails d'un film à afficher à partir de son movie_id et les affiche
-     * dans la vue /movie/. Renvoie aussi les séances associées de la table screenings.
+     * dans la vue /movie/. Renvoie aussi les séances associées de la table screenings ainsi que
+     * leur nombre de places disponibles.
      *
      * @param  int  $movie_id L'ID du film à afficher dans la vue.
      * @return \Illuminate\View\View La vue affichant les détails et séances du film.
