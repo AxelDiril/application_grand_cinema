@@ -41,6 +41,7 @@ class User extends Model
 	];
 
 	protected $fillable = [
+		'id',
 		'name',
 		'email',
 		'email_verified_at',
