@@ -126,20 +126,20 @@ class ScreeningController extends Controller
         if ($bScreeningExists) {
             $strMessage = "Une séance existe déjà pour cette salle et cet horaire.";
             $strLink = "/add_screening";
-            $strLinkMessage = "Retour à l'ajout d'une salle.";
+            $strLinkMessage = "Retour à l'ajout d'une séance.";
         }
-        else{
+        else {
+            // Créer la séance uniquement si elle n'existe pas déjà
+            $objScreening = new Screening();
+            $objScreening->movie_id = $arData['movie_id'];
+            $objScreening->room_id = $arData['room_id'];
+            $objScreening->screening_date = $objDate;
+            $objScreening->save();
+
             $strMessage = "La séance a bien été créée.";
             $strLink = "/screenings_list";
             $strLinkMessage = "Retour à la liste des séances.";
         }
-
-        // Créer la séance
-        $objScreening = new Screening();
-        $objScreening->movie_id = $arData['movie_id'];
-        $objScreening->room_id = $arData['room_id'];
-        $objScreening->screening_date = $objDate;
-        $objScreening->save();
 
         return view('pages/message', compact(
             'strMessage',
