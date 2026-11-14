@@ -4,10 +4,12 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\MovieController;
 use App\Http\Controllers\ScreeningController;
 
-Route::inertia('/', 'Welcome')->name('home');
+Route::get('/', function () {
+    return view('pages.accueil');
+})->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::inertia('dashboard', 'Dashboard')->name('dashboard');
+    return view('pages.accueil');
 });
 
 Route::get('/movies_list', [MovieController::class, 'getMovieList']);
