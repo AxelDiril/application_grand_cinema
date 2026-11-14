@@ -7,7 +7,10 @@ use App\Models\Movie;
 use App\Models\Screening;
 use App\Models\Room;
 use App\Models\Genre;
+use App\Models\User;
+use App\Models\Role;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 
 class MovieControllerTest extends TestCase
@@ -23,6 +26,10 @@ class MovieControllerTest extends TestCase
     private $screening1;
     private $screening2;
     private $screeningPast;
+
+    private $user;
+
+    private $role;
 
     /**
      * Création des données communes avant chaque test.
@@ -84,6 +91,20 @@ class MovieControllerTest extends TestCase
             'movie_id' => $this->movie1->movie_id,
             'room_id' => $this->room1->room_id,
             'screening_date' => Carbon::now()->subDay()
+        ]);
+
+        // Création d'un utilisateur et d'un rôle associé
+
+        $this->role = Role::Create([
+            'role_code' => 'U',
+            'role_label' => 'Utilisateur'  
+        ]);
+
+        $this->user = User::create([
+            'name' => 'Utilisateur Test',
+            'email' => 'test@example.com',
+            'password' => bcrypt('password'),
+            'role_code' => 'U'
         ]);
     }
 
@@ -256,5 +277,69 @@ class MovieControllerTest extends TestCase
             return $movies->count() === 1
                 && $movies->first()->movie_id === $this->movie1->movie_id;
         });
+    }
+
+    /**
+     * Test 10 : Vérifier que toutes les places sont disponibles lorsqu'il n'y a aucune
+     * réservation pour la séance.
+     */
+    public function test_screening_no_reservation()
+    {
+        $response = $this->get('/screenings_list');
+
+        $response->assertOk();
+
+        $arScreenings = $response->viewData('arScreenings');
+
+        $screening = $arScreenings->firstWhere(
+            'screening_id',
+            $this->screening1->screening_id
+        );
+
+        $this->assertNotNull($screening);
+
+        $this->assertEquals(
+            $this->room1->capacity,
+            $screening->available_seats
+        );
+    }
+
+    /**
+     * Test 11 : Vérifie que le nombre de places disponibles est correct après plusieurs
+     * réservations.
+     */
+    public function test_screening_several_reservations()
+    {
+        // Création de deux réservations pour la même séance
+        DB::table('reservations')->insert([
+            [
+                'screening_id' => $this->screening1->screening_id,
+                'id' => $this->user->id,
+                'seats_quantity' => 3,
+            ],
+            [
+                'screening_id' => $this->screening1->screening_id,
+                'id' => $this->user->id,
+                'seats_quantity' => 2,
+            ],
+        ]);
+
+        $response = $this->get('/screenings_list');
+
+        $response->assertOk();
+
+        $arScreenings = $response->viewData('arScreenings');
+
+        $screening = $arScreenings->firstWhere(
+            'screening_id',
+            $this->screening1->screening_id
+        );
+
+        $this->assertNotNull($screening);
+
+        $this->assertEquals(
+            $this->room1->capacity - 5,
+            $screening->available_seats
+        );
     }
 }

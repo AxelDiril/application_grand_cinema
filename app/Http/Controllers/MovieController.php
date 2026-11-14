@@ -44,7 +44,8 @@ class MovieController extends Controller
 
     /**
      * Récupère les détails d'un film à afficher à partir de son movie_id et les affiche
-     * dans la vue /movie/. Renvoie aussi les séances associées de la table screenings.
+     * dans la vue /movie/. Renvoie aussi les séances associées de la table screenings ainsi que
+     * leur nombre de places disponibles.
      *
      * @param  int  $movie_id L'ID du film à afficher dans la vue.
      * @return \Illuminate\View\View La vue affichant les détails et séances du film.
@@ -53,20 +54,34 @@ class MovieController extends Controller
     {
         $objMovie = Movie::find($movie_id);
 
-        // Vérifier si le film existe, sinon rediriger vers une page d'erreur
-        if($objMovie == null){
+        // Vérifier si le film existe
+        if ($objMovie == null) {
             $strMessage = "Ce film n'existe pas.";
             $strLink = "/";
             $strLinkMessage = "Retour à la page d'accueil.";
-            
-            return view('pages/message', compact('strMessage','strLink','strLinkMessage'));
+
+            return view('pages/message', compact(
+                'strMessage',
+                'strLink',
+                'strLinkMessage'
+            ));
         }
 
-        $arScreenings = Screening::where('movie_id', $movie_id)
+        // Récupérer les prochaines séances et la somme des places réservées
+        $arScreenings = Screening::with(['room'])
+            ->withSum('reservations', 'seats_quantity')
+            ->where('movie_id', $movie_id)
             ->where('screening_date', '>=', now())
             ->orderBy('screening_date', 'asc')
             ->get();
 
-        return view('pages/movie', compact('objMovie','arScreenings'));
+        // Calculer les places disponibles pour chaque séance
+        foreach ($arScreenings as $screening) {
+            $screening->available_seats =
+                $screening->room->capacity
+                - ($screening->reservations_sum_seats_quantity ?? 0);
+        }
+
+        return view('pages/movie', compact('objMovie', 'arScreenings'));
     }
 }
