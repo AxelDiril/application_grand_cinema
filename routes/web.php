@@ -17,5 +17,7 @@ Route::get('/screenings_list', [ScreeningController::class, 'getScreeningsList']
 Route::get('/movie/{movie_id}', [MovieController::class, 'getMovie']);
 Route::get('/add_screening', [ScreeningController::class, 'addScreening']);
 Route::post('/insert_screening', [ScreeningController::class, 'insertScreening']);
+Route::get('/edit_screening/{screening_id}', [ScreeningController::class, 'editScreening']);
+Route::post('/update_screening/{screening_id}', [ScreeningController::class, 'updateScreening']);
 
 require __DIR__.'/settings.php';
