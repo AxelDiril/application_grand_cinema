@@ -15,5 +15,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 Route::get('/movies_list', [MovieController::class, 'getMovieList']);
 Route::get('/screenings_list', [ScreeningController::class, 'getScreeningsList']);
 Route::get('/movie/{movie_id}', [MovieController::class, 'getMovie']);
+Route::get('/add_screening', [ScreeningController::class, 'addScreening']);
+Route::post('/insert_screening', [ScreeningController::class, 'insertScreening']);
 
 require __DIR__.'/settings.php';

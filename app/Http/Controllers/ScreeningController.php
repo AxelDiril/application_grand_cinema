@@ -6,6 +6,9 @@ use Illuminate\Http\Request;
 use App\Models\Screening;
 use App\Models\Room;
 use App\Models\Genre;
+use App\Models\Movie;
+use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
 
 class ScreeningController extends Controller
 {
@@ -75,6 +78,73 @@ class ScreeningController extends Controller
             'iGenreId',
             'iRoomId',
             'strDate'
+        ));
+    }
+
+    public function addScreening()
+    {
+        // Vérifier si l'utilisateur est administrateur
+        $objAuthUser = Auth::user();
+        if ($objAuthUser == false || $objAuthUser->role_code != 'A') {
+            return redirect('/');
+        }
+
+        $arRooms = Room::get();
+        $arMovies = Movie::get();
+
+        return view('pages/add_screening', compact(
+            'arRooms',
+            'arMovies'
+        ));
+    }
+
+    public function insertScreening(Request $request)
+    {
+        // Vérifier que l'utilisateur est administrateur
+        $objAuthUser = Auth::user();
+
+        if (!$objAuthUser || $objAuthUser->role_code != 'A') {
+            return redirect('/');
+        }
+
+        // Valider les données du formulaire
+        $arData = $request->validate([
+            'movie_id' => 'required|exists:movies,movie_id',
+            'room_id' => 'required|exists:rooms,room_id',
+            'screening_date' => 'required|date_format:Y-m-d\TH:i',
+        ]);
+
+        // Convertir la date reçue
+        $objDate = Carbon::parse($arData['screening_date']);
+
+        // Vérifier si une séance existe déjà avec la même salle et même horaire
+        $bScreeningExists = Screening::where('room_id', $arData['room_id'])
+            ->where('screening_date', '>=', $objDate->copy()->startOfMinute())
+            ->where('screening_date', '<', $objDate->copy()->addMinute())
+            ->exists();
+
+        if ($bScreeningExists) {
+            $strMessage = "Une séance existe déjà pour cette salle et cet horaire.";
+            $strLink = "/add_screening";
+            $strLinkMessage = "Retour à l'ajout d'une salle.";
+        }
+        else{
+            $strMessage = "La séance a bien été créée.";
+            $strLink = "/screenings_list";
+            $strLinkMessage = "Retour à la liste des séances.";
+        }
+
+        // Créer la séance
+        $objScreening = new Screening();
+        $objScreening->movie_id = $arData['movie_id'];
+        $objScreening->room_id = $arData['room_id'];
+        $objScreening->screening_date = $objDate;
+        $objScreening->save();
+
+        return view('pages/message', compact(
+            'strMessage',
+            'strLink',
+            'strLinkMessage'
         ));
     }
 
