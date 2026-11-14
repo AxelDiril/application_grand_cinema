@@ -420,4 +420,75 @@ class ScreeningControllerTest extends TestCase
         // Aucune séance supplémentaire ne doit être créée
         $this->assertDatabaseCount('screenings', 2);
     }
+
+    /**
+     * Test 16 : Vérifie qu'un utilisateur non administrateur ne puisse pas modifier une séance.
+     */
+    public function test_update_screening_refuses_non_admin()
+    {
+        $response = $this->actingAs($this->user1)
+            ->post('/update_screening/' . $this->screening1->screening_id, [
+                'movie_id' => $this->movie2->movie_id,
+                'room_id' => $this->room2->room_id,
+                'screening_date' => '2026-12-12T15:30',
+            ]);
+
+        $response->assertRedirect('/');
+    }
+
+    /**
+     * Test 17 : Vérifie qu'un administrateur puisse modifier une séance.
+     */
+    public function test_update_screening_modifies_screening()
+    {
+        $response = $this->actingAs($this->user2)
+            ->post('/update_screening/' . $this->screening1->screening_id, [
+                'movie_id' => $this->movie2->movie_id,
+                'room_id' => $this->room2->room_id,
+                'screening_date' => '2026-12-12T15:30',
+            ]);
+
+        $response->assertOk();
+        $response->assertViewIs('pages.message');
+        $response->assertViewHas(
+            'strMessage',
+            'La séance a bien été modifiée.'
+        );
+
+        $this->assertDatabaseHas('screenings', [
+            'screening_id' => $this->screening1->screening_id,
+            'movie_id' => $this->movie2->movie_id,
+            'room_id' => $this->room2->room_id,
+            'screening_date' => '2026-12-12 15:30:00',
+        ]);
+    }
+
+    /**
+     * Test 18 : Vérifie qu'un administrateur ne puisse pas enregistrer une séance si une autre
+     * existe à la même salle et même horaire.
+     */
+    public function test_update_screening_refuses_duplicate_screening()
+    {
+        $response = $this->actingAs($this->user2)
+            ->post('/update_screening/' . $this->screening1->screening_id, [
+                'movie_id' => $this->movie2->movie_id,
+                'room_id' => $this->room2->room_id,
+                'screening_date' => '2026-12-11T18:00',
+            ]);
+
+        $response->assertOk();
+        $response->assertViewIs('pages.message');
+        $response->assertViewHas(
+            'strMessage',
+            'Une séance existe déjà pour cette salle et cet horaire.'
+        );
+
+        // Vérifier que la séance initiale n'a pas été modifiée
+        $this->assertDatabaseHas('screenings', [
+            'screening_id' => $this->screening1->screening_id,
+            'movie_id' => $this->movie1->movie_id,
+            'room_id' => $this->room1->room_id,
+            'screening_date' => '2026-12-10 14:00:00',
+        ]);
+    }
 }
