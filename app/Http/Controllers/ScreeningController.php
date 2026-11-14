@@ -162,4 +162,112 @@ class ScreeningController extends Controller
         ));
     }
 
+    /**
+     * Affiche le formulaire de modification d'une séance.
+     * Vérifie que l'utilisateur connecté est administrateur.
+     *
+     * @param int $screening_id Identifiant de la séance à modifier.
+     * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse
+     */
+    public function editScreening($screening_id)
+    {
+        // Vérifier si l'utilisateur est administrateur
+        $objAuthUser = Auth::user();
+
+        if (!$objAuthUser || $objAuthUser->role_code != 'A') {
+            return redirect('/');
+        }
+
+        // Récupérer la séance
+        $objScreening = Screening::find($screening_id);
+
+        if (!$objScreening) {
+            return redirect('/');
+        }
+
+        // Récupérer les salles et les films
+        $arRooms = Room::get();
+        $arMovies = Movie::get();
+
+        // Récupérer les informations actuelles de la séance
+        $iMovieId = $objScreening->movie_id;
+        $iRoomId = $objScreening->room_id;
+        $strScreeningDate = Carbon::parse($objScreening->screening_date)
+            ->format('Y-m-d\TH:i');
+
+        return view('pages/edit_screening', compact(
+            'arRooms',
+            'arMovies',
+            'iMovieId',
+            'iRoomId',
+            'strScreeningDate',
+            'screening_id'
+        ));
+    }
+
+    /**
+     * Récupère les données du formulaire d'édition de séance pour la mettre à jour en base
+     * de données.
+     *
+     * @param Request $request Données du formulaires.
+     * @param int $screening_id Identifiant de la séance à modifier.
+     * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse
+     */
+    public function updateScreening(Request $request, $screening_id)
+    {
+        // Vérifier que l'utilisateur est administrateur
+        $objAuthUser = Auth::user();
+
+        if (!$objAuthUser || $objAuthUser->role_code != 'A') {
+            return redirect('/');
+        }
+
+        // Récupérer la séance à modifier
+        $objScreening = Screening::find($screening_id);
+
+        if (!$objScreening) {
+            return redirect('/');
+        }
+
+        // Valider les données du formulaire
+        $arData = $request->validate([
+            'movie_id' => 'required|exists:movies,movie_id',
+            'room_id' => 'required|exists:rooms,room_id',
+            'screening_date' => 'required|date_format:Y-m-d\TH:i',
+        ]);
+
+        // Convertir la date reçue
+        $objDate = Carbon::parse($arData['screening_date']);
+
+        // Vérifier si une autre séance existe déjà dans la même salle
+        // à la même date et au même horaire
+        $bScreeningExists = Screening::where('room_id', $arData['room_id'])
+            ->where('screening_id', '!=', $screening_id)
+            ->where('screening_date', '>=', $objDate->copy()->startOfMinute())
+            ->where('screening_date', '<', $objDate->copy()->addMinute())
+            ->exists();
+
+        if ($bScreeningExists) {
+            $strMessage = "Une séance existe déjà pour cette salle et cet horaire.";
+            $strLink = "/edit_screening/" . $screening_id;
+            $strLinkMessage = "Retour à la modification de la séance.";
+        }
+        else {
+            // Modifier la séance
+            $objScreening->movie_id = $arData['movie_id'];
+            $objScreening->room_id = $arData['room_id'];
+            $objScreening->screening_date = $objDate;
+            $objScreening->save();
+
+            $strMessage = "La séance a bien été modifiée.";
+            $strLink = "/screenings_list";
+            $strLinkMessage = "Retour à la liste des séances.";
+        }
+
+        return view('pages/message', compact(
+            'strMessage',
+            'strLink',
+            'strLinkMessage'
+        ));
+    }
 }
