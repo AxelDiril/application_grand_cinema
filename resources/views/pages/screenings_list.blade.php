@@ -33,6 +33,11 @@
         <a href="/movie/{{ $screening->movie_id }}">{{ $screening->movie->movie_name }}</a>
         le {{ $screening->screening_date }} ({{ $screening->movie->duration_minutes }} min)
         à {{ $screening->room->room_name }}
+        @if ($screening->available_seats <= 0)
+            Séance complète
+        @else
+            Places disponibles : {{ $screening->available_seats }}
+        @endif
         <br>
     @endforeach
 @endif

@@ -7,6 +7,7 @@
 namespace App\Models;
 
 use Carbon\Carbon;
+use App\Models\Reservation;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -43,5 +44,10 @@ class Screening extends Model
 
 	public function room(){
 		return $this->belongsTo(Room::class, 'room_id', 'room_id');
+	}
+
+	public function reservations()
+	{
+		return $this->hasMany(Reservation::class, 'screening_id', 'screening_id');
 	}
 }
