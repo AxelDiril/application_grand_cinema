@@ -6,6 +6,9 @@ use Illuminate\Http\Request;
 use App\Models\Screening;
 use App\Models\Room;
 use App\Models\Genre;
+use App\Models\Movie;
+use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
 
 class ScreeningController extends Controller
 {
@@ -17,7 +20,6 @@ class ScreeningController extends Controller
      * @param Request  $request Les paramètres de filtres de la requête.
      * @return \Illuminate\View\View La vue affichant les détails et séances du film.
      */
-    
     public function getScreeningsList(Request $request)
     {
         $strName = $request->query('movie_name');
@@ -75,6 +77,88 @@ class ScreeningController extends Controller
             'iGenreId',
             'iRoomId',
             'strDate'
+        ));
+    }
+
+    /**
+     * Récupère la liste des films et des salles pour qu'un administrateur connecté puisse ajouter
+     * une séance à la programmation à travers un formulaire.
+     * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse Retourne le formulaire
+     * d'ajout de séances ou redirige l'utilisateur non-administrateur ou non connecté vers la
+     * page d'accueil.
+     **/
+    public function addScreening()
+    {
+        // Vérifier si l'utilisateur est administrateur
+        $objAuthUser = Auth::user();
+        if ($objAuthUser == false || $objAuthUser->role_code != 'A') {
+            return redirect('/');
+        }
+
+        $arRooms = Room::get();
+        $arMovies = Movie::get();
+
+        return view('pages/add_screening', compact(
+            'arRooms',
+            'arMovies'
+        ));
+    }
+
+        /**
+     * Récupère les données du formulaire d'ajout de séances, vérifie si un scéance n'existe pas
+     * déjà pour la salle et l'horaire données et enregistre la séance en base de données.
+     * @param Request $request Les données du formulaire.
+     * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse Retourne le formulaire
+     * d'ajout de séances ou redirige l'utilisateur non-administrateur ou non connecté vers la
+     * page d'accueil.
+     **/
+    public function insertScreening(Request $request)
+    {
+        // Vérifier que l'utilisateur est administrateur
+        $objAuthUser = Auth::user();
+
+        if (!$objAuthUser || $objAuthUser->role_code != 'A') {
+            return redirect('/');
+        }
+
+        // Valider les données du formulaire
+        $arData = $request->validate([
+            'movie_id' => 'required|exists:movies,movie_id',
+            'room_id' => 'required|exists:rooms,room_id',
+            'screening_date' => 'required|date_format:Y-m-d\TH:i',
+        ]);
+
+        // Convertir la date reçue
+        $objDate = Carbon::parse($arData['screening_date']);
+
+        // Vérifier si une séance existe déjà avec la même salle et même horaire
+        $bScreeningExists = Screening::where('room_id', $arData['room_id'])
+            ->where('screening_date', '>=', $objDate->copy()->startOfMinute())
+            ->where('screening_date', '<', $objDate->copy()->addMinute())
+            ->exists();
+
+        if ($bScreeningExists) {
+            $strMessage = "Une séance existe déjà pour cette salle et cet horaire.";
+            $strLink = "/add_screening";
+            $strLinkMessage = "Retour à l'ajout d'une séance.";
+        }
+        else {
+            // Créer la séance uniquement si elle n'existe pas déjà
+            $objScreening = new Screening();
+            $objScreening->movie_id = $arData['movie_id'];
+            $objScreening->room_id = $arData['room_id'];
+            $objScreening->screening_date = $objDate;
+            $objScreening->save();
+
+            $strMessage = "La séance a bien été créée.";
+            $strLink = "/screenings_list";
+            $strLinkMessage = "Retour à la liste des séances.";
+        }
+
+        return view('pages/message', compact(
+            'strMessage',
+            'strLink',
+            'strLinkMessage'
         ));
     }
 

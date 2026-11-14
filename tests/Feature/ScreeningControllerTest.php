@@ -27,8 +27,10 @@ class ScreeningControllerTest extends TestCase
     private $genre2;
     private $screening1;
     private $screening2;
-    private $user;
-    private $role;
+    private $user1;
+    private $user2;
+    private $roleU;
+    private $roleA;
 
     /**
      * Création des données communes avant chaque test.
@@ -91,16 +93,30 @@ class ScreeningControllerTest extends TestCase
 
         // Création d'un utilisateur et d'un rôle associé
 
-        $this->role = Role::Create([
+        $this->roleU = Role::Create([
             'role_code' => 'U',
             'role_label' => 'Utilisateur'  
         ]);
 
-        $this->user = User::create([
+        $this->user1 = User::create([
             'name' => 'Utilisateur Test',
             'email' => 'test@example.com',
             'password' => bcrypt('password'),
             'role_code' => 'U'
+        ]);
+
+        // Création d'un administrateur et d'un rôle associé
+
+        $this->roleA = Role::Create([
+            'role_code' => 'A',
+            'role_label' => 'Administrateur'  
+        ]);
+
+        $this->user2 = User::create([
+            'name' => 'Utilisateur Test',
+            'email' => 'test2@example.com',
+            'password' => bcrypt('password'),
+            'role_code' => 'A'
         ]);
     }
 
@@ -274,12 +290,12 @@ class ScreeningControllerTest extends TestCase
         DB::table('reservations')->insert([
             [
                 'screening_id' => $this->screening1->screening_id,
-                'id' => $this->user->id,
+                'id' => $this->user1->id,
                 'seats_quantity' => 3,
             ],
             [
                 'screening_id' => $this->screening1->screening_id,
-                'id' => $this->user->id,
+                'id' => $this->user1->id,
                 'seats_quantity' => 2,
             ],
         ]);
@@ -301,5 +317,107 @@ class ScreeningControllerTest extends TestCase
             $this->room1->capacity - 5,
             $screening->available_seats
         );
+    }
+
+    /**
+     * Test 11 : Vérifie qu'un utilisateur non-adminastrateur ne puisse pas accéder à l'ajout
+     * de séances.
+     */
+    public function test_add_screening_refuses_non_admin()
+    {
+        $response = $this->actingAs($this->user1)
+            ->get('/add_screening');
+
+        $response->assertRedirect('/');
+    }
+
+    /**
+     * Test 12 : Vérifie qu'un administrateur peut accéder à l'ajout de séances.
+     */
+    public function test_add_screening_admin()
+    {
+
+        $response = $this->actingAs($this->user2)
+            ->get('/add_screening');
+
+        $response->assertOk();
+        $response->assertViewIs('pages.add_screening');
+
+        $response->assertViewHas('arRooms');
+        $response->assertViewHas('arMovies');
+
+        $response->assertViewHas('arRooms', function ($rooms) {
+            return $rooms->contains('room_id', $this->room1->room_id);
+        });
+
+        $response->assertViewHas('arMovies', function ($movies) {
+            return $movies->contains('movie_id', $this->movie1->movie_id);
+        });
+    }
+
+    /**
+     * Test 13 : Vérifie qu'un utilisateur non-administrateur ne puisse insérer une séance dans
+     * la base de données.
+     */
+    public function test_insert_screening_refuses_non_admin()
+    {
+        $response = $this->actingAs($this->user1)
+            ->post('/insert_screening', [
+                'movie_id' => $this->movie1->movie_id,
+                'room_id' => $this->room1->room_id,
+                'screening_date' => '2026-12-12T15:30',
+            ]);
+
+        $response->assertRedirect('/');
+    }
+
+    /**
+     * Test 14 : Vérifie qu'un administrateur puisse insérer une séance dans la base de données.
+     */
+    public function test_insert_screening_admin()
+    {
+
+        $response = $this->actingAs($this->user2)
+            ->post('/insert_screening', [
+                'movie_id' => $this->movie1->movie_id,
+                'room_id' => $this->room1->room_id,
+                'screening_date' => '2026-12-12T15:30',
+            ]);
+
+        $response->assertOk();
+        $response->assertViewIs('pages.message');
+        $response->assertViewHas(
+            'strMessage',
+            'La séance a bien été créée.'
+        );
+
+        $this->assertDatabaseHas('screenings', [
+            'movie_id' => $this->movie1->movie_id,
+            'room_id' => $this->room1->room_id,
+            'screening_date' => '2026-12-12 15:30:00',
+        ]);
+    }
+
+    /**
+     * Test 15 : Vérifie qu'une même séance ne peut pas être créée deux fois.
+     */
+    public function test_insert_screening_refuses_duplicate_screening()
+    {
+        $response = $this->actingAs($this->user2)
+            ->post('/insert_screening', [
+                'movie_id' => $this->movie2->movie_id,
+                'room_id' => $this->room1->room_id,
+                'screening_date' => '2026-12-10T14:00',
+            ]);
+
+        $response->assertOk();
+        $response->assertViewIs('pages.message');
+        $response->assertViewHas(
+            'strMessage',
+            'Une séance existe déjà pour cette salle et cet horaire.'
+        );
+
+        // Aucune séance supplémentaire ne doit être créée
+        $this->assertDatabaseCount('screenings', 2);
     }
 }

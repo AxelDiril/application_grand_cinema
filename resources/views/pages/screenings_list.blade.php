@@ -7,6 +7,12 @@
 @section('contenu')
 <h2>Liste des séances</h2>
 
+@auth
+  @if ( Auth::user()->role_code == "A" )
+  <a href="/add_screening">Ajouter une séance</a>
+  @endif
+@endif
+
 <form method="GET">
   <!-- Recherche par nom -->
   <input type="text" name="movie_name" placeholder="Nom du film..." value="{{ $strName }}">
