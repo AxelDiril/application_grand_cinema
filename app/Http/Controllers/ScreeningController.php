@@ -20,7 +20,6 @@ class ScreeningController extends Controller
      * @param Request  $request Les paramètres de filtres de la requête.
      * @return \Illuminate\View\View La vue affichant les détails et séances du film.
      */
-    
     public function getScreeningsList(Request $request)
     {
         $strName = $request->query('movie_name');
@@ -81,6 +80,13 @@ class ScreeningController extends Controller
         ));
     }
 
+    /**
+     * Récupère la liste des films et des salles pour qu'un administrateur connecté puisse ajouter
+     * une séance à la programmation à travers un formulaire.
+     * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse Retourne le formulaire
+     * d'ajout de séances ou redirige l'utilisateur non-administrateur ou non connecté vers la
+     * page d'accueil.
+     **/
     public function addScreening()
     {
         // Vérifier si l'utilisateur est administrateur
@@ -98,6 +104,14 @@ class ScreeningController extends Controller
         ));
     }
 
+        /**
+     * Récupère les données du formulaire d'ajout de séances, vérifie si un scéance n'existe pas
+     * déjà pour la salle et l'horaire données et enregistre la séance en base de données.
+     * @param Request $request Les données du formulaire.
+     * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse Retourne le formulaire
+     * d'ajout de séances ou redirige l'utilisateur non-administrateur ou non connecté vers la
+     * page d'accueil.
+     **/
     public function insertScreening(Request $request)
     {
         // Vérifier que l'utilisateur est administrateur
