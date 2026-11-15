@@ -69,4 +69,3 @@
         <a href="{{ route('login') }}">Se connecter</a>
     </p>
 @stop
-```

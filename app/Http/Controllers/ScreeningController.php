@@ -270,4 +270,107 @@ class ScreeningController extends Controller
             'strLinkMessage'
         ));
     }
+
+    /**
+     * Affiche les détails d'une séance afin que l'utilisateur puisse effectuer une réservation.
+     *
+     * @param int $screening_id Identifiant de la séance sélectionnée.
+     * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse Retourne le formulaire
+     * de réservation ou redirige l'utilisateur non-connecté vers la page de connexion.
+     */
+    public function makeReservation($screening_id)
+    {
+        // Vérifie que l'utilisateur est connecté.
+        $objAuthUser = Auth::user();
+
+        if (!$objAuthUser) {
+            // Redirige vers un message pour informer qu'un compte est nécessaire.
+            $strMessage = "Vous devez vous connecter pour effectuer une réservation.";
+            $strLink = "/login";
+            $strLinkMessage = "Connexion";
+
+            return view('pages/message', compact(
+                'strMessage',
+                'strLink',
+                'strLinkMessage'
+            ));
+        }
+
+        // Récupère la séance et ses relations.
+        $objScreening = Screening::with(['movie', 'room'])
+            ->find($screening_id);
+
+        // Vérifie que la séance existe.
+        if (!$objScreening) {
+            return redirect('/');
+        }
+
+        // Calcule le nombre de places déjà réservées.
+        $iReservedSeats = $objScreening->reservations()
+            ->sum('seats_quantity');
+
+        // Calcule le nombre de places disponibles.
+        $iAvailableSeats = $objScreening->room->capacity - $iReservedSeats;
+
+        // Affiche la page de réservation.
+        return view('pages/make_reservation', compact(
+            'objScreening',
+            'iAvailableSeats'
+        ));
+    }
+
+    /**
+     * Affiche le récapitulatif d'une réservation avant sa validation.
+     *
+     * @param Request $request Les données du formulaire.
+     * @param int $screening_id Identifiant de la séance sélectionnée.
+     * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse Retourne le récapitulatif
+     * de commande ou redirige l'utilisateur non-connecté vers la page d'accueil.
+     */
+    public function confirmReservation(Request $request, $screening_id)
+    {
+        // Vérifie que l'utilisateur est connecté.
+        $objAuthUser = Auth::user();
+
+        if (!$objAuthUser) {
+            return redirect('/');
+        }
+    
+        // Récupère la séance et ses relations.
+        $objScreening = Screening::with(['movie', 'room'])
+            ->find($screening_id);
+
+        // Vérifie que la séance existe.
+        if (!$objScreening) {
+            return redirect('/');
+        }
+
+        // Vérifie le nombre de places demandé.
+        $arData = $request->validate([
+            'seats_quantity' => 'required|integer|min:1'
+        ]);
+
+        $iSeatsQuantity = $arData['seats_quantity'];
+
+        // Calcule le nombre de places déjà réservées.
+        $iReservedSeats = $objScreening->reservations()
+            ->sum('seats_quantity');
+
+        // Vérifie qu'il reste suffisamment de places.
+        $iAvailableSeats = $objScreening->room->capacity - $iReservedSeats;
+
+        if ($iSeatsQuantity > $iAvailableSeats) {
+            return redirect('/make_reservation/' . $screening_id);
+        }
+
+        // Calcule le prix total (10 € par place).
+        $fTotalPrice = $iSeatsQuantity * 10;
+
+        // Affiche le récapitulatif de la réservation.
+        return view('pages/confirm_reservation', compact(
+            'objScreening',
+            'iSeatsQuantity',
+            'fTotalPrice'
+        ));
+    }
 }

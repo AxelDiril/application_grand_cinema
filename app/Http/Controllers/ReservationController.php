@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Reservation;
+use App\Models\Screening;
 use App\Models\Room;
 use App\Models\Movie;
 use Illuminate\Support\Facades\Auth;
@@ -99,4 +100,63 @@ class ReservationController extends Controller
         ));
     }
 
+    /**
+     * Enregistre la réservation de l'utilisateur en base de données.
+     *
+     * @param Request $request Les données du formulaire.
+     * @param int $screening_id Identifiant de la séance.
+     * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse Retourne un message de
+     * confirmation à l'utilisateur ou renvoie l'utilisateur non-connecté vers la page d'accueil.
+     */
+    public function addReservation(Request $request, $screening_id)
+    {
+        // Vérifie que l'utilisateur est connecté.
+        $objAuthUser = Auth::user();
+
+        if (!$objAuthUser) {
+            return redirect('/');
+        }
+
+        // Récupère la séance et sa salle.
+        $objScreening = Screening::with('room')->find($screening_id);
+
+        if (!$objScreening) {
+            return redirect('/');
+        }
+
+        // Vérifie le nombre de places demandé.
+        $arData = $request->validate([
+            'seats_quantity' => 'required|integer|min:1'
+        ]);
+
+        $iSeatsQuantity = $arData['seats_quantity'];
+
+        // Calcule le nombre de places disponibles.
+        $iReservedSeats = $objScreening->reservations()
+            ->sum('seats_quantity');
+
+        $iAvailableSeats = $objScreening->room->capacity - $iReservedSeats;
+
+        if ($iSeatsQuantity > $iAvailableSeats) {
+            return redirect('/make_reservation/' . $screening_id);
+        }
+
+        // Crée la réservation.
+        Reservation::create([
+            'screening_id' => $screening_id,
+            'id' => $objAuthUser->id,
+            'seats_quantity' => $iSeatsQuantity
+        ]);
+
+        // Redirige vers un message de confirmation.
+        $strMessage = "Votre réservation a bien été enregistrée.";
+        $strLink = "/";
+        $strLinkMessage = "Retour à l'accueil";
+
+        return view('pages/message', compact(
+            'strMessage',
+            'strLink',
+            'strLinkMessage'
+        ));
+    }
 }
