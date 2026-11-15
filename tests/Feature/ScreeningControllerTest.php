@@ -491,4 +491,104 @@ class ScreeningControllerTest extends TestCase
             'screening_date' => '2026-12-10 14:00:00',
         ]);
     }
+
+    /**
+     * Test 19 : Vérifie qu'un utilisateur authentifié puisse accéder à la page de réservation.
+     */
+    public function test_make_reservation()
+    {
+        $response = $this->actingAs($this->user1)
+            ->get('/make_reservation/' . $this->screening1->screening_id);
+
+        $response->assertOk();
+
+        $response->assertViewIs('pages.make_reservation');
+
+        $response->assertViewHas('objScreening', function ($screening) {
+            return $screening->screening_id == $this->screening1->screening_id;
+        });
+
+        $response->assertViewHas('iAvailableSeats', $this->room1->capacity);
+    }
+
+    /**
+     * Test 20 : Vérifie qu'un utilisateur non authentifié ne peut pas accéder à la réservation.
+     */
+    public function test_make_reservation_unauthenticated()
+    {
+        $response = $this->get('/make_reservation/' . $this->screening1->screening_id);
+
+        $response->assertOk();
+
+        $response->assertViewIs('pages.message');
+
+        $response->assertViewHas('strMessage', 
+            "Vous devez vous connecter pour effectuer une réservation."
+        );
+
+        $response->assertViewHas('strLink', '/login');
+
+        $response->assertViewHas('strLinkMessage', 'Connexion');
+    }
+
+    /**
+     * Test 21 : Vérifie qu'un utilisateur authentifié puisse afficher le récapitulatif.
+     */
+    public function test_confirm_reservation()
+    {
+        $response = $this->actingAs($this->user1)
+            ->post('/confirm_reservation/' . $this->screening1->screening_id, [
+                'seats_quantity' => 3
+            ]);
+
+        $response->assertOk();
+
+        $response->assertViewIs('pages.confirm_reservation');
+
+        $response->assertViewHas('objScreening');
+
+        $response->assertViewHas('iSeatsQuantity', 3);
+
+        $response->assertViewHas('fTotalPrice', 30);
+    }
+
+    /**
+     * Test 22 : Vérifier qu'un utilisateur non-authentifié ne puisse pas afficher
+     * le récapitulatif.
+     */
+    public function test_confirm_reservation_nauthenticated()
+    {
+        $response = $this->post('/confirm_reservation/' . $this->screening1->screening_id, [
+            'seats_quantity' => 3
+        ]);
+
+        $response->assertRedirect('/');
+    }
+
+    /**
+     * Test 23 : Vérifie que le nombre de places doit être supérieur ou égal à 1.
+     */
+    public function test_confirm_reservation_invalid_seats_quantity()
+    {
+        $response = $this->actingAs($this->user1)
+            ->post('/confirm_reservation/' . $this->screening1->screening_id, [
+                'seats_quantity' => 0
+            ]);
+
+        $response->assertSessionHasErrors('seats_quantity');
+    }
+
+    /**
+     * Test 24 : Vérifie que le nombre de places demandé ne puisse pas dépasser les places disponibles.
+     */
+    public function test_confirm_reservation_refuses_too_many_seats()
+    {
+        $response = $this->actingAs($this->user1)
+            ->post('/confirm_reservation/' . $this->screening1->screening_id, [
+                'seats_quantity' => $this->room1->capacity + 1
+            ]);
+
+        $response->assertRedirect('/make_reservation/' . $this->screening1->screening_id);
+    }
+
 }

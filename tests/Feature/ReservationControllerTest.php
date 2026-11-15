@@ -298,4 +298,58 @@ class ReservationControllerTest extends TestCase
                     === $this->reservation1->reservation_id;
         });
     }
+
+    /**
+     * Test 9 : Vérifie qu'un utilisateur authentifié peut créer une réservation.
+     */
+    public function test_add_reservation()
+    {
+        $response = $this->actingAs($this->user1)
+            ->post('/add_reservation/' . $this->screening1->screening_id, [
+                'seats_quantity' => 4
+            ]);
+
+        $response->assertOk();
+
+        $response->assertViewIs('pages.message');
+
+        $response->assertViewHas('strMessage', 
+            "Votre réservation a bien été enregistrée."
+        );
+
+        $this->assertDatabaseHas('reservations', [
+            'screening_id' => $this->screening1->screening_id,
+            'id' => $this->user1->id,
+            'seats_quantity' => 4
+        ]);
+    }
+
+    /**
+     * Test 10 : Vérifie qu'un utilisateur non authentifié ne peut pas réserver.
+     */
+    public function test_add_reservation_unauthenticated()
+    {
+        $response = $this->post('/add_reservation/' . $this->screening1->screening_id, [
+            'seats_quantity' => 2
+        ]);
+
+        $response->assertRedirect('/');
+    }
+
+    /**
+     * Test 11 : Vérifie qu'il est impossible de réserver plus de places
+     * que la capacité disponible de la salle.
+     */
+    public function test_add_reservation_too_many_seats()
+    {
+        $response = $this->actingAs($this->user1)
+            ->post('/add_reservation/' . $this->screening1->screening_id, [
+                'seats_quantity' => $this->room1->capacity + 1
+            ]);
+
+        $response->assertRedirect(
+            '/make_reservation/' . $this->screening1->screening_id
+        );
+    }
+
 }
