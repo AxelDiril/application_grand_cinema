@@ -3,8 +3,11 @@
 <a href="/screenings_list">Séances</a>
 
 @auth
-Bienvenue, {{ Auth::user()->name }}.
-<form method="POST" action="{{ route('logout') }}">
+    @if ( Auth::user()->role_code == "A" || Auth::user()->role_code == "C")
+        <a href="/reservations_list">Réservations</a>
+    @endif
+    Bienvenue, {{ Auth::user()->name }}.
+    <form method="POST" action="{{ route('logout') }}">
     @csrf
     <input type="submit" value="Se déconnecter">
 </form>
