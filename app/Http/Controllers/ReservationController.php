@@ -28,7 +28,7 @@ class ReservationController extends Controller
         // d'agent de contrôle.
         $objAuthUser = Auth::user();
 
-        if (!$objAuthUser || $objAuthUser->role_code != 'A') {
+        if (!$objAuthUser || ($objAuthUser->role_code != 'A' && $objAuthUser->role_code != 'C')) {
             return redirect('/');
         }
 
