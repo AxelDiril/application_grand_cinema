@@ -150,9 +150,10 @@ class ReservationController extends Controller
         ]);
 
         // Redirige vers un message de confirmation.
-        $strMessage = "Votre réservation a bien été enregistrée.";
-        $strLink = "/";
-        $strLinkMessage = "Retour à l'accueil";
+        $strMessage = 'Votre réservation a bien été enregistrée. Vous pouvez télécharger votre billet
+        dans la section "Mes billets"';
+        $strLink = "/my_tickets";
+        $strLinkMessage = "Mes billets";
 
         return view('pages/message', compact(
             'strMessage',
