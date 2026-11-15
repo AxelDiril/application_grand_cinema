@@ -24,5 +24,7 @@ Route::get('/reservations_list', [ReservationController::class, 'getReservations
 Route::get('/make_reservation/{screening_id}', [ScreeningController::class, 'makeReservation']);
 Route::post('/confirm_reservation/{screening_id}', [ScreeningController::class, 'confirmReservation']);
 Route::post('/add_reservation/{screening_id}', [ReservationController::class, 'addReservation']);
+Route::get('/my_tickets', [ReservationController::class, 'getMyTickets']);
+Route::get('/download_ticket/{reservation_id}', [ReservationController::class, 'downloadTicket']);
 
 require __DIR__.'/settings.php';
