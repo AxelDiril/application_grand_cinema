@@ -57,4 +57,3 @@
         <a href="{{ route('register') }}">Créer un compte</a>
     </p>
 @stop
-```

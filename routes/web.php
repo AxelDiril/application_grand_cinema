@@ -21,5 +21,8 @@ Route::post('/insert_screening', [ScreeningController::class, 'insertScreening']
 Route::get('/edit_screening/{screening_id}', [ScreeningController::class, 'editScreening']);
 Route::post('/update_screening/{screening_id}', [ScreeningController::class, 'updateScreening']);
 Route::get('/reservations_list', [ReservationController::class, 'getReservationsList']);
+Route::get('/make_reservation/{screening_id}', [ScreeningController::class, 'makeReservation']);
+Route::post('/confirm_reservation/{screening_id}', [ScreeningController::class, 'confirmReservation']);
+Route::post('/add_reservation/{screening_id}', [ReservationController::class, 'addReservation']);
 
 require __DIR__.'/settings.php';

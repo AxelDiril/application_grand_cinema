@@ -53,6 +53,7 @@
         @else
             Places disponibles : {{ $screening->available_seats }}
         @endif
+        <a href="/make_reservation/{{ $screening->screening_id }}">Réserver</a>
         @auth
           @if ( Auth::user()->role_code == "A" )
             <a href="/edit_screening/{{ $screening->screening_id }}">Modifier</a>
