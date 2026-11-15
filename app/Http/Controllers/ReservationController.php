@@ -150,8 +150,7 @@ class ReservationController extends Controller
         ]);
 
         // Redirige vers un message de confirmation.
-        $strMessage = 'Votre réservation a bien été enregistrée. Vous pouvez télécharger votre billet
-        dans la section "Mes billets"';
+        $strMessage = 'Votre réservation a bien été enregistrée. Vous pouvez télécharger votre billet dans la section "Mes billets"';
         $strLink = "/my_tickets";
         $strLinkMessage = "Mes billets";
 
@@ -202,8 +201,9 @@ class ReservationController extends Controller
      * Génère et télécharge le billet PDF correspondant à une réservation.
      *
      * @param int $reservation_id Identifiant de la réservation.
-     * @return \Illuminate\Http\Response|\Illuminate\View\View Télécharge le billet ou renvoie
-     * un message d'erreur si l'utilisateur n'est pas connecté.
+     * @return \Illuminate\Http\Response|\Illuminate\View\View|\Illuminate\Http\RedirectResponse 
+     * Télécharge le billet, renvoie un message d'erreur si l'utilisateur n'est pas connecté ou renvoie
+     * à la page d'accueil si il tente de télécharger une réservation qui n'existe pas.
      */
     public function downloadTicket($reservation_id)
     {
@@ -228,6 +228,11 @@ class ReservationController extends Controller
             'screening.movie',
             'screening.room'
         ])->find($reservation_id);
+
+        // Vérifie que la réservation existe
+        if (!$objReservation) {
+            return redirect('/');
+        }
 
         // Génère le PDF à partir de la vue ticket.
         $objPdf = Pdf::loadView('pages.ticket', compact('objReservation'));
