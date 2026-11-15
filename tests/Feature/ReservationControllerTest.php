@@ -1,0 +1,301 @@
+<?php
+
+namespace Tests\Feature;
+
+use Tests\TestCase;
+use App\Models\Movie;
+use App\Models\Room;
+use App\Models\Genre;
+use App\Models\Screening;
+use App\Models\Reservation;
+use App\Models\User;
+use App\Models\Role;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
+
+class ReservationControllerTest extends TestCase
+{
+    use DatabaseTransactions;
+
+    // Propriétés privées utilisées par les tests
+
+    private $movie1;
+    private $movie2;
+    private $room1;
+    private $room2;
+    private $genre1;
+    private $genre2;
+    private $screening1;
+    private $screening2;
+    private $user1;
+    private $user2;
+    private $user3;
+    private $roleU;
+    private $roleC;
+    private $reservation1;
+    private $reservation2;
+
+    /**
+     * Création des données communes avant chaque test.
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Création des films
+        $this->movie1 = Movie::create([
+            'movie_name' => 'Film Test A',
+            'director' => 'Réalisateur A',
+            'duration_minutes' => 120,
+            'description' => 'Description A'
+        ]);
+
+        $this->movie2 = Movie::create([
+            'movie_name' => 'Film Test B',
+            'director' => 'Réalisateur B',
+            'duration_minutes' => 90,
+            'description' => 'Description B'
+        ]);
+
+        // Création des genres
+        $this->genre1 = Genre::create([
+            'genre_label' => 'Action'
+        ]);
+
+        $this->genre2 = Genre::create([
+            'genre_label' => 'Comédie'
+        ]);
+
+        // Association des genres aux films
+        $this->movie1->genres()->attach($this->genre1->genre_id);
+        $this->movie2->genres()->attach($this->genre2->genre_id);
+
+        // Création des salles
+        $this->room1 = Room::create([
+            'room_name' => 'Salle Test A',
+            'capacity' => 100
+        ]);
+
+        $this->room2 = Room::create([
+            'room_name' => 'Salle Test B',
+            'capacity' => 150
+        ]);
+
+        // Création des séances
+        $this->screening1 = Screening::create([
+            'movie_id' => $this->movie1->movie_id,
+            'room_id' => $this->room1->room_id,
+            'screening_date' => '2026-12-10 14:00:00'
+        ]);
+
+        $this->screening2 = Screening::create([
+            'movie_id' => $this->movie2->movie_id,
+            'room_id' => $this->room2->room_id,
+            'screening_date' => '2026-12-11 18:00:00'
+        ]);
+
+        // Création du rôle utilisateur
+        $this->roleU = Role::create([
+            'role_code' => 'U',
+            'role_label' => 'Utilisateur'
+        ]);
+
+        // Création des utilisateurs
+        $this->user1 = User::create([
+            'name' => 'Utilisateur Test A',
+            'email' => 'testA@example.com',
+            'password' => bcrypt('password'),
+            'role_code' => 'U'
+        ]);
+
+        $this->user2 = User::create([
+            'name' => 'Utilisateur Test B',
+            'email' => 'testB@example.com',
+            'password' => bcrypt('password'),
+            'role_code' => 'U'
+        ]);
+
+        // Création des réservations
+        $this->reservation1 = Reservation::create([
+            'screening_id' => $this->screening1->screening_id,
+            'id' => $this->user1->id,
+            'seats_quantity' => 3
+        ]);
+
+        $this->reservation2 = Reservation::create([
+            'screening_id' => $this->screening2->screening_id,
+            'id' => $this->user2->id,
+            'seats_quantity' => 2
+        ]);
+
+        // Création d'un agent de contrôle pour accéder à la page
+        $this->roleC = Role::create([
+            'role_code' => 'C',
+            'role_label' => 'Agent de contrôle'
+        ]);
+
+        $this->user3 = User::create([
+            'name' => 'Utilisateur Test C',
+            'email' => 'testC@example.com',
+            'password' => bcrypt('password'),
+            'role_code' => 'C'
+        ]);
+    }
+
+    /**
+     * Test 1 : Vérifie que toutes les réservations sont affichées.
+     */
+    public function test_get_reservations_list()
+    {
+        $response = $this->actingAs($this->user3)->get('/reservations_list');
+
+        $response->assertOk();
+        $response->assertViewIs('pages.reservations_list');
+
+        $response->assertViewHas('arReservations', function ($reservations) {
+            return $reservations->contains(
+                'reservation_id',
+                $this->reservation1->reservation_id
+            )
+            && $reservations->contains(
+                'reservation_id',
+                $this->reservation2->reservation_id
+            );
+        });
+    }
+
+    /**
+     * Test 2 : Vérifie que les relations utilisateur, séance,
+     * film et salle sont correctement chargées.
+     */
+    public function test_get_reservations_list_loads_relations()
+    {
+        $response = $this->actingAs($this->user3)->get('/reservations_list');
+
+        $response->assertOk();
+
+        $response->assertViewHas('arReservations', function ($reservations) {
+            $reservation = $reservations->firstWhere(
+                'reservation_id',
+                $this->reservation1->reservation_id
+            );
+
+            return $reservation !== null
+                && $reservation->relationLoaded('user')
+                && $reservation->relationLoaded('screening')
+                && $reservation->screening->relationLoaded('movie')
+                && $reservation->screening->relationLoaded('room');
+        });
+    }
+
+    /**
+     * Test 3 : Vérifie le filtre par nom de l'utilisateur.
+     */
+    public function test_filter_reservations_by_user_name()
+    {
+        $response = $this->actingAs($this->user3)->get(
+            '/reservations_list?name=Utilisateur Test A');
+
+        $response->assertOk();
+
+        $response->assertViewHas('arReservations', function ($reservations) {
+            return $reservations->count() === 1
+                && $reservations->first()->reservation_id
+                    === $this->reservation1->reservation_id;
+        });
+    }
+
+    /**
+     * Test 4 : Vérifie le filtre par identifiant de réservation.
+     */
+    public function test_filter_reservations_by_id()
+    {
+        $response = $this->actingAs($this->user3)->get(
+            '/reservations_list?reservation_id='
+            . $this->reservation1->reservation_id
+        );
+
+        $response->assertOk();
+
+        $response->assertViewHas('arReservations', function ($reservations) {
+            return $reservations->count() === 1
+                && $reservations->first()->reservation_id
+                    === $this->reservation1->reservation_id;
+        });
+    }
+
+    /**
+     * Test 5 : Vérifie le filtre par date de séance.
+     */
+    public function test_filter_reservations_by_screening_date()
+    {
+        $response = $this->actingAs($this->user3)->get(
+            '/reservations_list?screening_date=2026-12-10'
+        );
+
+        $response->assertOk();
+
+        $response->assertViewHas('arReservations', function ($reservations) {
+            return $reservations->count() === 1
+                && $reservations->first()->reservation_id
+                    === $this->reservation1->reservation_id;
+        });
+    }
+
+    /**
+     * Test 6 : Vérifie le filtre par film.
+     */
+    public function test_filter_reservations_by_movie()
+    {
+        $response = $this->actingAs($this->user3)->get(
+            '/reservations_list?movie_id=' . $this->movie1->movie_id
+        );
+
+        $response->assertOk();
+
+        $response->assertViewHas('arReservations', function ($reservations) {
+            return $reservations->count() === 1
+                && $reservations->first()->reservation_id
+                    === $this->reservation1->reservation_id;
+        });
+    }
+
+    /**
+     * Test 7 : Vérifie le filtre par salle.
+     */
+    public function test_filter_reservations_by_room()
+    {
+        $response = $this->actingAs($this->user3)->get(
+            '/reservations_list?room_id=' . $this->room1->room_id
+        );
+
+        $response->assertOk();
+
+        $response->assertViewHas('arReservations', function ($reservations) {
+            return $reservations->count() === 1
+                && $reservations->first()->reservation_id
+                    === $this->reservation1->reservation_id;
+        });
+    }
+
+    /**
+     * Test 8 : Vérifie plusieurs filtres simultanés.
+     */
+    public function test_filter_reservations_with_multiple_filters()
+    {
+        $response = $this->actingAs($this->user3)->get(
+            '/reservations_list?name=Utilisateur Test A'
+            . '&reservation_id=' . $this->reservation1->reservation_id
+            . '&screening_date=2026-12-10'
+            . '&movie_id=' . $this->movie1->movie_id
+            . '&room_id=' . $this->room1->room_id
+        );
+
+        $response->assertOk();
+
+        $response->assertViewHas('arReservations', function ($reservations) {
+            return $reservations->count() === 1
+                && $reservations->first()->reservation_id
+                    === $this->reservation1->reservation_id;
+        });
+    }
+}
