@@ -314,7 +314,7 @@ class ReservationControllerTest extends TestCase
         $response->assertViewIs('pages.message');
 
         $response->assertViewHas('strMessage', 
-            "Votre réservation a bien été enregistrée."
+            'Votre réservation a bien été enregistrée. Vous pouvez télécharger votre billet dans la section "Mes billets"'
         );
 
         $this->assertDatabaseHas('reservations', [
@@ -352,4 +352,89 @@ class ReservationControllerTest extends TestCase
         );
     }
 
+    /**
+     * Test 12 : Vérifie l'affichage des réservations de l'utilisateur connecté.
+     */
+    public function test_get_my_tickets(): void
+    {
+        $response = $this->actingAs($this->user1)
+            ->get('/my_tickets');
+
+        $response->assertOk();
+        $response->assertViewIs('pages.my_tickets');
+        $response->assertViewHas('arReservations');
+
+        $arReservations = $response->viewData('arReservations');
+
+        // Vérifie que seule la réservation de l'utilisateur connecté est affichée
+        $this->assertCount(1, $arReservations);
+        $this->assertEquals(
+            $this->reservation1->reservation_id,
+            $arReservations->first()->reservation_id
+        );
+    }
+
+    /**
+     * Test 13 : Vérifie qu'un utilisateur non-connecté puisse accéder aux réservations.
+     */
+    public function test_get_my_tickets_unauthenticated(): void
+    {
+        $response = $this->get('/my_tickets');
+
+        $response->assertOk();
+        $response->assertViewIs('pages.message');
+        $response->assertViewHas(
+            'strMessage',
+            "Vous devez vous connecter pour consulter vos réservations."
+        );
+        $response->assertViewHas('strLink', '/login');
+        $response->assertViewHas('strLinkMessage', 'Connexion');
+    }
+
+    /**
+     * Test 14 ! Vérifie que le billet téléchargé correspond bien à l'utilisateur connecté.
+     */
+    public function test_download_ticket(): void
+    {
+        $response = $this->actingAs($this->user1)
+            ->get('/download_ticket/' . $this->reservation1->reservation_id);
+
+        $response->assertOk();
+        $response->assertHeader('content-type', 'application/pdf');
+        $response->assertHeader(
+            'content-disposition',
+            'attachment; filename=billet_reservation_' .
+            $this->reservation1->reservation_id . '.pdf'
+        );
+    }
+
+    /**
+     * Test 15 : Vérifie qu'un billet ne puisse pas être téléchargé sans être connecté.
+     */
+    public function test_download_ticket_unauthenticated(): void
+    {
+        $response = $this->get(
+            '/download_ticket/' . $this->reservation1->reservation_id
+        );
+
+        $response->assertOk();
+        $response->assertViewIs('pages.message');
+        $response->assertViewHas(
+            'strMessage',
+            "Vous devez vous connecter pour télécharger vos billets."
+        );
+        $response->assertViewHas('strLink', '/login');
+        $response->assertViewHas('strLinkMessage', 'Connexion');
+    }
+
+    /**
+     * Test 16 : Vérifie qu'on ne puisse pas télécharger le billet d'une réservation qui n'existe pas
+     */
+    public function test_download_ticket_unknown_reservation(): void
+    {
+        $response = $this->actingAs($this->user1)
+            ->get('/download_ticket/999999');
+
+        $response->assertRedirect('/');
+    }
 }

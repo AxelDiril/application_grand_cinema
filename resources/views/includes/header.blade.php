@@ -3,6 +3,7 @@
 <a href="/screenings_list">Séances</a>
 
 @auth
+    <a href="{{ url('/my_tickets') }}">Mes billets</a>
     @if ( Auth::user()->role_code == "A" || Auth::user()->role_code == "C")
         <a href="/reservations_list">Réservations</a>
     @endif

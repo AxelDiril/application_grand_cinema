@@ -8,6 +8,7 @@ use App\Models\Screening;
 use App\Models\Room;
 use App\Models\Movie;
 use Illuminate\Support\Facades\Auth;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class ReservationController extends Controller
 {
@@ -149,14 +150,96 @@ class ReservationController extends Controller
         ]);
 
         // Redirige vers un message de confirmation.
-        $strMessage = "Votre réservation a bien été enregistrée.";
-        $strLink = "/";
-        $strLinkMessage = "Retour à l'accueil";
+        $strMessage = 'Votre réservation a bien été enregistrée. Vous pouvez télécharger votre billet dans la section "Mes billets"';
+        $strLink = "/my_tickets";
+        $strLinkMessage = "Mes billets";
 
         return view('pages/message', compact(
             'strMessage',
             'strLink',
             'strLinkMessage'
         ));
+    }    
+
+    /**
+     * Affiche les réservations de l'utilisateur connecté. Il pourra y télécharger ses billets sous
+     * format PDF.
+     *
+    * @return \Illuminate\Http\Response|\Illuminate\View\View Télécharge le billet ou renvoie
+     * un message d'erreur si l'utilisateur n'est pas connecté.
+     */
+    public function getMyTickets()
+    {
+        $objAuthUser = Auth::user();
+
+        // Vérifie que l'utilisateur est connecté
+        if (!$objAuthUser) {
+            $strMessage = "Vous devez vous connecter pour consulter vos réservations.";
+            $strLink = "/login";
+            $strLinkMessage = "Connexion";
+
+            return view('pages/message', compact(
+                'strMessage',
+                'strLink',
+                'strLinkMessage'
+            ));
+        }
+
+        // Récupère uniquement les réservations de l'utilisateur connecté
+        $arReservations = Reservation::with([
+            'screening.movie',
+            'screening.room'
+        ])
+            ->where('id', $objAuthUser->id)
+            ->orderBy('reservation_id', 'desc')
+            ->get();
+
+        return view('pages/my_tickets', compact('arReservations'));
+    }
+
+    /**
+     * Génère et télécharge le billet PDF correspondant à une réservation.
+     *
+     * @param int $reservation_id Identifiant de la réservation.
+     * @return \Illuminate\Http\Response|\Illuminate\View\View|\Illuminate\Http\RedirectResponse 
+     * Télécharge le billet, renvoie un message d'erreur si l'utilisateur n'est pas connecté ou renvoie
+     * à la page d'accueil si il tente de télécharger une réservation qui n'existe pas.
+     */
+    public function downloadTicket($reservation_id)
+    {
+        // Vérifie que l'utilisateur est connecté.
+        $objAuthUser = Auth::user();
+
+        if (!$objAuthUser) {
+            $strMessage = "Vous devez vous connecter pour télécharger vos billets.";
+            $strLink = "/login";
+            $strLinkMessage = "Connexion";
+
+            return view('pages.message', compact(
+                'strMessage',
+                'strLink',
+                'strLinkMessage'
+            ));
+        }
+
+        // Récupère la réservation et ses relations.
+        $objReservation = Reservation::with([
+            'user',
+            'screening.movie',
+            'screening.room'
+        ])->find($reservation_id);
+
+        // Vérifie que la réservation existe
+        if (!$objReservation) {
+            return redirect('/');
+        }
+
+        // Génère le PDF à partir de la vue ticket.
+        $objPdf = Pdf::loadView('pages.ticket', compact('objReservation'));
+
+        // Télécharge le billet PDF.
+        return $objPdf->download(
+            'billet_reservation_' . $objReservation->reservation_id . '.pdf'
+        );
     }
 }
