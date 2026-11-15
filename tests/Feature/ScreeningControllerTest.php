@@ -9,6 +9,7 @@ use App\Models\Genre;
 use App\Models\Screening;
 use App\Models\User;
 use App\Models\Role;
+use App\Models\Reservation;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 
@@ -589,6 +590,101 @@ class ScreeningControllerTest extends TestCase
             ]);
 
         $response->assertRedirect('/make_reservation/' . $this->screening1->screening_id);
+    }
+
+    /**
+     * Test 25 : Vérifie l'affichage du tableau de bord administrateur.
+     */
+    public function test_get_admin_dashboard(): void
+    {
+        $response = $this->actingAs($this->user2)
+            ->get('/admin_dashboard');
+
+        $response->assertOk();
+        $response->assertViewIs('pages.admin_dashboard');
+        $response->assertViewHas('arScreenings');
+
+        $arScreenings = $response->viewData('arScreenings');
+
+        // Vérifie que les séances sont bien présentes
+        $this->assertCount(2, $arScreenings);
+
+        // Vérifie que les séances sont classées de la plus récente à la plus ancienne
+        $this->assertTrue(
+            $arScreenings[0]->screening_date >= $arScreenings[1]->screening_date
+        );
+    }
+
+    /**
+     * Test 26 : Vérifie le calcul du nombre de places occupées et du pourcentage de remplissage.
+     */
+    public function test_get_admin_dashboard_occupancy_calculation(): void
+    {
+        // Création des réservations pour tester le taux de remplissage
+        Reservation::create([
+            'screening_id' => $this->screening1->screening_id,
+            'id' => $this->user1->id,
+            'seats_quantity' => 3
+        ]);
+
+        Reservation::create([
+            'screening_id' => $this->screening2->screening_id,
+            'id' => $this->user2->id,
+            'seats_quantity' => 2
+        ]);
+        $response = $this->actingAs($this->user2)
+            ->get('/admin_dashboard');
+
+        $response->assertOk();
+
+        $arScreenings = $response->viewData('arScreenings');
+
+        // Récupère les séances correspondantes
+        $objScreening1 = $arScreenings->firstWhere(
+            'screening_id',
+            $this->screening1->screening_id
+        );
+
+        $objScreening2 = $arScreenings->firstWhere(
+            'screening_id',
+            $this->screening2->screening_id
+        );
+
+        // Vérifie le nombre de places occupées
+        $this->assertEquals(3, $objScreening1->occupied_seats);
+        $this->assertEquals(2, $objScreening2->occupied_seats);
+
+        // Vérifie les pourcentages de remplissage
+        $this->assertEquals(
+            round((3 / $this->room1->capacity) * 100, 2),
+            $objScreening1->occupancy_rate
+        );
+
+        $this->assertEquals(
+            round((2 / $this->room2->capacity) * 100, 2),
+            $objScreening2->occupancy_rate
+        );
+    }
+
+    /**
+     * Test 27 : Vérifie qu'un utilisateur non-connecté ne puisse pas accéder au tableau de bord.
+     */
+    public function test_get_admin_dashboard_unauthenticated(): void
+    {
+        $response = $this->get('/admin_dashboard');
+
+        $response->assertRedirect('/');
+    }
+
+    /**
+     * Test 28 : Vérifie qu'un utilisateur non-administrateur ne puisse pas accéder au tableau de bord.
+     */
+    public function test_get_admin_dashboard_unauthorized(): void
+    {
+        $response = $this->actingAs($this->user1)
+            ->get('/admin_dashboard');
+
+        $response->assertRedirect('/');
     }
 
 }
