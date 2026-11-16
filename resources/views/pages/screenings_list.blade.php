@@ -57,6 +57,7 @@
         @auth
           @if ( Auth::user()->role_code == "A" )
             <a href="/edit_screening/{{ $screening->screening_id }}">Modifier</a>
+            <a href="/delete_screening/{{ $screening->screening_id }}">Supprimer</a>
           @endif
         @endif
         <br>

@@ -408,4 +408,43 @@ class ScreeningController extends Controller
 
         return view('pages/admin_dashboard', compact('arScreenings'));
     }
+
+    /**
+     * Supprime une séance de la base de données à partir de son Id. Ne peut être effectué que par
+     * un administrateur.
+     *
+     * @param int $screening_id Id de
+     * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse Retourne un message de
+     * confirmation de la suppression ou renvoie l'utilisateur à la page d'accueil si il n'est pas
+     * administrateur.
+     */
+    public function deleteScreening($screening_id)
+    {
+        $objAuthUser = Auth::user();
+
+        // Vérification des droits administrateur
+        if (!$objAuthUser || $objAuthUser->role_code != 'A') {
+            return redirect('/');
+        }
+
+        // Recherche de la séance
+        $objScreening = Screening::find($screening_id);
+
+        if (!$objScreening) {
+            return redirect('/');
+        }
+
+        // Suppression de la séance
+        $objScreening->delete();
+
+        $strMessage = "La séance a bien été supprimée.";
+        $strLink = "/screenings_list";
+        $strLinkMessage = "Retour à la liste des séances";
+
+        return view('pages/message', compact(
+                'strMessage',
+                'strLink',
+                'strLinkMessage'
+        ));
+    }
 }

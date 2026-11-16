@@ -687,4 +687,49 @@ class ScreeningControllerTest extends TestCase
         $response->assertRedirect('/');
     }
 
+    /**
+     * Test 29 : Vérifie la suppression d'une séance par un administrateur.
+     */
+    public function test_delete_screening()
+    {
+        $this->actingAs($this->user2);
+
+        $response = $this->get('/delete_screening/' . $this->screening1->screening_id);
+
+        $response->assertOk();
+        $response->assertViewIs('pages.message');
+
+        $response->assertViewHas('strMessage', "La séance a bien été supprimée.");
+        $response->assertViewHas('strLink', '/screenings_list');
+
+        $this->assertDatabaseMissing('screenings', [
+            'screening_id' => $this->screening1->screening_id
+        ]);
+    }
+
+    /**
+     * Test 30 : Vérifie qu'un visiteur non connecté ne peut pas supprimer une séance.
+     */
+    public function test_delete_screening_unauthenticated()
+    {
+        $response = $this->get('/delete_screening/' . $this->screening1->screening_id);
+
+        $response->assertRedirect('/');
+
+        $this->assertDatabaseHas('screenings', [
+            'screening_id' => $this->screening1->screening_id
+        ]);
+    }
+
+    /**
+     * Test 31 : Vérifie qu'on ne puisse pas supprimer une séance inexistante.
+     */
+    public function test_delete_unknown_screening()
+    {
+        $this->actingAs($this->user2);
+
+        $response = $this->get('/delete_screening/999999');
+
+        $response->assertRedirect('/');
+    }
 }
