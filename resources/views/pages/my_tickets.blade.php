@@ -44,6 +44,12 @@
                     {{ number_format($reservation->seats_quantity * 10, 2, ',', ' ') }} €
                 </p>
 
+                @if(\Carbon\Carbon::parse($reservation->screening->screening_date)->isPast())
+                - Statut : Séance passée
+                @else
+                    - Statut : Billet valide
+                @endif
+
                 <a href="{{ url('/download_ticket/' . $reservation->reservation_id) }}">
                     Télécharger mon billet
                 </a>
