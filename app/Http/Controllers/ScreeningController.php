@@ -373,4 +373,39 @@ class ScreeningController extends Controller
             'fTotalPrice'
         ));
     }
+
+    /**
+     * Affiche le tableau de bord administrateur avec les dernières séances et leur taux de remplissage.
+     *
+     * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse Retourne la liste des séances
+     * ou renvoie l'utilisateur à la page d'accueil si il n'est pas administrateur.
+     */
+    public function getAdminDashboard()
+    {
+        $objAuthUser = Auth::user();
+
+        // Vérifie que l'utilisateur est administrateur
+        if (!$objAuthUser || $objAuthUser->role_code != 'A') {
+            return redirect('/');
+        }
+
+        // Récupère les séances avec le nombre de places réservées
+        $arScreenings = Screening::with(['movie', 'room'])
+            ->withSum('reservations', 'seats_quantity')
+            ->orderBy('screening_date', 'desc')
+            ->get();
+
+        // Calcule les places occupées et le pourcentage de remplissage
+        foreach ($arScreenings as $screening) {
+            $iOccupiedSeats = $screening->reservations_sum_seats_quantity ?? 0;
+            $iTotalSeats = $screening->room->capacity;
+
+            $screening->occupied_seats = $iOccupiedSeats;
+            $screening->occupancy_rate = $iTotalSeats > 0
+                ? round(($iOccupiedSeats / $iTotalSeats) * 100, 2)
+                : 0;
+        }
+
+        return view('pages/admin_dashboard', compact('arScreenings'));
+    }
 }
