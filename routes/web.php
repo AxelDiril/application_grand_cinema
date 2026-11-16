@@ -27,5 +27,6 @@ Route::post('/add_reservation/{screening_id}', [ReservationController::class, 'a
 Route::get('/my_tickets', [ReservationController::class, 'getMyTickets']);
 Route::get('/download_ticket/{reservation_id}', [ReservationController::class, 'downloadTicket']);
 Route::get('/admin_dashboard', [ScreeningController::class, 'getAdminDashboard']);
+Route::get('/delete_screening/{screening_id}', [ScreeningController::class, 'deleteScreening']);
 
 require __DIR__.'/settings.php';
