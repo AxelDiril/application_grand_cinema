@@ -22,7 +22,6 @@
                 name="email"
                 value="{{ old('email') }}"
                 required
-                autofocus
             >
             @error('email')
                 <p>{{ $message }}</p>
