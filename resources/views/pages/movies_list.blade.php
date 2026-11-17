@@ -17,7 +17,7 @@
         <select id="genre_id" name="genre_id">
             <option value="all">Tous les genres</option>
             @foreach($arGenres as $genre)
-                <option value="{{ $genre->genre_id }}" 
+                <option value="{{ $genre->genre_id }}"
                 {{ $genre->genre_id == $iGenreId ? 'selected' : '' }}>
                 {{ $genre->genre_label }}
                 </option>

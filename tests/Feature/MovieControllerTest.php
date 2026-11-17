@@ -18,18 +18,17 @@ class MovieControllerTest extends TestCase
     use DatabaseTransactions;
 
     // Propriétés privées utilisées par les tests
-    private $movie1;
-    private $movie2;
-    private $room1;
-    private $genre1;
-    private $genre2;
-    private $screening1;
-    private $screening2;
-    private $screeningPast;
+    private $objMovie1;
+    private $objMovie2;
+    private $objRoom1;
+    private $objGenre1;
+    private $objGenre2;
+    private $objScreening1;
+    private $objScreening2;
+    private $objScreeningPast;
 
-    private $user;
-
-    private $role;
+    private $objUser;
+    private $objRole;
 
     /**
      * Création des données communes avant chaque test.
@@ -39,14 +38,14 @@ class MovieControllerTest extends TestCase
         parent::setUp();
 
         // Création des films
-        $this->movie1 = Movie::create([
+        $this->objMovie1 = Movie::create([
             'movie_name' => 'Le Dîner Impossible',
             'director' => 'Maxime Roux',
             'duration_minutes' => 101,
             'description' => 'Un repas de famille tourne à la catastrophe.'
         ]);
 
-        $this->movie2 = Movie::create([
+        $this->objMovie2 = Movie::create([
             'movie_name' => 'Les Petits Explorateurs',
             'director' => 'Pauline Chevalier',
             'duration_minutes' => 79,
@@ -54,53 +53,53 @@ class MovieControllerTest extends TestCase
         ]);
 
         // Création des genres
-        $this->genre1 = Genre::create([
+        $this->objGenre1 = Genre::create([
             'genre_label' => 'Action'
         ]);
 
-        $this->genre2 = Genre::create([
+        $this->objGenre2 = Genre::create([
             'genre_label' => 'Comédie'
         ]);
 
         // Association des genres aux films
-        $this->movie1->genres()->attach($this->genre1->genre_id);
-        $this->movie2->genres()->attach($this->genre2->genre_id);
+        $this->objMovie1->genres()->attach($this->objGenre1->genre_id);
+        $this->objMovie2->genres()->attach($this->objGenre2->genre_id);
 
         // Création de la salle
-        $this->room1 = Room::create([
+        $this->objRoom1 = Room::create([
             'room_name' => 'Salle Test',
             'capacity' => 100
         ]);
 
         // Séance future du premier film
-        $this->screening1 = Screening::create([
-            'movie_id' => $this->movie1->movie_id,
-            'room_id' => $this->room1->room_id,
+        $this->objScreening1 = Screening::create([
+            'movie_id' => $this->objMovie1->movie_id,
+            'room_id' => $this->objRoom1->room_id,
             'screening_date' => Carbon::now()->addDay()
         ]);
 
         // Séance future du deuxième film
-        $this->screening2 = Screening::create([
-            'movie_id' => $this->movie2->movie_id,
-            'room_id' => $this->room1->room_id,
+        $this->objScreening2 = Screening::create([
+            'movie_id' => $this->objMovie2->movie_id,
+            'room_id' => $this->objRoom1->room_id,
             'screening_date' => Carbon::now()->addDays(2)
         ]);
 
         // Séance passée du premier film
-        $this->screeningPast = Screening::create([
-            'movie_id' => $this->movie1->movie_id,
-            'room_id' => $this->room1->room_id,
+        $this->objScreeningPast = Screening::create([
+            'movie_id' => $this->objMovie1->movie_id,
+            'room_id' => $this->objRoom1->room_id,
             'screening_date' => Carbon::now()->subDay()
         ]);
 
         // Création d'un utilisateur et d'un rôle associé
 
-        $this->role = Role::Create([
+        $this->objRole = Role::Create([
             'role_code' => 'U',
-            'role_label' => 'Utilisateur'  
+            'role_label' => 'Utilisateur'
         ]);
 
-        $this->user = User::create([
+        $this->objUser = User::create([
             'name' => 'Utilisateur Test',
             'email' => 'test@example.com',
             'password' => bcrypt('password'),
@@ -121,7 +120,7 @@ class MovieControllerTest extends TestCase
         $response->assertViewHas('arMovies', function ($movies) {
             return $movies->contains(
                 'movie_id',
-                $this->movie1->movie_id
+                $this->objMovie1->movie_id
             );
         });
     }
@@ -133,18 +132,18 @@ class MovieControllerTest extends TestCase
     {
         // Suppression des séances associées aux films de setUp()
         Screening::whereIn('movie_id', [
-            $this->movie1->movie_id,
-            $this->movie2->movie_id
+            $this->objMovie1->movie_id,
+            $this->objMovie2->movie_id
         ])->delete();
 
         // Suppression des associations entre films et genres
-        $this->movie1->genres()->detach();
-        $this->movie2->genres()->detach();
+        $this->objMovie1->genres()->detach();
+        $this->objMovie2->genres()->detach();
 
         // Suppression des films
         Movie::whereIn('movie_id', [
-            $this->movie1->movie_id,
-            $this->movie2->movie_id
+            $this->objMovie1->movie_id,
+            $this->objMovie2->movie_id
         ])->delete();
 
         $response = $this->get('/movies_list');
@@ -162,13 +161,13 @@ class MovieControllerTest extends TestCase
      */
     public function test_get_movie()
     {
-        $response = $this->get('/movie/' . $this->movie1->movie_id);
+        $response = $this->get('/movie/' . $this->objMovie1->movie_id);
 
         $response->assertStatus(200);
         $response->assertViewIs('pages.movie');
 
         $response->assertViewHas('objMovie', function ($objMovie) {
-            return $objMovie->movie_id === $this->movie1->movie_id;
+            return $objMovie->movie_id === $this->objMovie1->movie_id;
         });
     }
 
@@ -191,7 +190,7 @@ class MovieControllerTest extends TestCase
      */
     public function test_get_movie_next_screenings()
     {
-        $response = $this->get('/movie/' . $this->movie1->movie_id);
+        $response = $this->get('/movie/' . $this->objMovie1->movie_id);
 
         $response->assertStatus(200);
         $response->assertViewIs('pages.movie');
@@ -199,11 +198,11 @@ class MovieControllerTest extends TestCase
         $response->assertViewHas('arScreenings', function ($screenings) {
             return $screenings->contains(
                 'screening_id',
-                $this->screening1->screening_id
+                $this->objScreening1->screening_id
             )
             && !$screenings->contains(
                 'screening_id',
-                $this->screeningPast->screening_id
+                $this->objScreeningPast->screening_id
             );
         });
     }
@@ -213,18 +212,18 @@ class MovieControllerTest extends TestCase
      */
     public function test_get_movie_screenings_of_selected_movie()
     {
-        $response = $this->get('/movie/' . $this->movie1->movie_id);
+        $response = $this->get('/movie/' . $this->objMovie1->movie_id);
 
         $response->assertStatus(200);
 
         $response->assertViewHas('arScreenings', function ($screenings) {
             return $screenings->contains(
                 'screening_id',
-                $this->screening1->screening_id
+                $this->objScreening1->screening_id
             )
             && !$screenings->contains(
                 'screening_id',
-                $this->screening2->screening_id
+                $this->objScreening2->screening_id
             );
         });
     }
@@ -240,7 +239,7 @@ class MovieControllerTest extends TestCase
 
         $response->assertViewHas('arMovies', function ($movies) {
             return $movies->count() === 1
-                && $movies->first()->movie_id === $this->movie1->movie_id;
+                && $movies->first()->movie_id === $this->objMovie1->movie_id;
         });
     }
 
@@ -250,14 +249,14 @@ class MovieControllerTest extends TestCase
     public function test_filter_movies_by_genre()
     {
         $response = $this->get(
-            '/movies_list?genre_id=' . $this->genre1->genre_id
+            '/movies_list?genre_id=' . $this->objGenre1->genre_id
         );
 
         $response->assertStatus(200);
 
         $response->assertViewHas('arMovies', function ($movies) {
             return $movies->count() === 1
-                && $movies->first()->movie_id === $this->movie1->movie_id;
+                && $movies->first()->movie_id === $this->objMovie1->movie_id;
         });
     }
 
@@ -268,14 +267,14 @@ class MovieControllerTest extends TestCase
     {
         $response = $this->get(
             '/movies_list?movie_name=Le Dîner'
-            . '&genre_id=' . $this->genre1->genre_id
+            . '&genre_id=' . $this->objGenre1->genre_id
         );
 
         $response->assertStatus(200);
 
         $response->assertViewHas('arMovies', function ($movies) {
             return $movies->count() === 1
-                && $movies->first()->movie_id === $this->movie1->movie_id;
+                && $movies->first()->movie_id === $this->objMovie1->movie_id;
         });
     }
 
@@ -293,13 +292,13 @@ class MovieControllerTest extends TestCase
 
         $screening = $arScreenings->firstWhere(
             'screening_id',
-            $this->screening1->screening_id
+            $this->objScreening1->screening_id
         );
 
         $this->assertNotNull($screening);
 
         $this->assertEquals(
-            $this->room1->capacity,
+            $this->objRoom1->capacity,
             $screening->available_seats
         );
     }
@@ -313,13 +312,13 @@ class MovieControllerTest extends TestCase
         // Création de deux réservations pour la même séance
         DB::table('reservations')->insert([
             [
-                'screening_id' => $this->screening1->screening_id,
-                'id' => $this->user->id,
+                'screening_id' => $this->objScreening1->screening_id,
+                'id' => $this->objUser->id,
                 'seats_quantity' => 3,
             ],
             [
-                'screening_id' => $this->screening1->screening_id,
-                'id' => $this->user->id,
+                'screening_id' => $this->objScreening1->screening_id,
+                'id' => $this->objUser->id,
                 'seats_quantity' => 2,
             ],
         ]);
@@ -332,13 +331,13 @@ class MovieControllerTest extends TestCase
 
         $screening = $arScreenings->firstWhere(
             'screening_id',
-            $this->screening1->screening_id
+            $this->objScreening1->screening_id
         );
 
         $this->assertNotNull($screening);
 
         $this->assertEquals(
-            $this->room1->capacity - 5,
+            $this->objRoom1->capacity - 5,
             $screening->available_seats
         );
     }

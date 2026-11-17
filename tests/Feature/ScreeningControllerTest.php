@@ -20,18 +20,18 @@ class ScreeningControllerTest extends TestCase
 
     // Propriétés privées utilisées par les tests
 
-    private $movie1;
-    private $movie2;
-    private $room1;
-    private $room2;
-    private $genre1;
-    private $genre2;
-    private $screening1;
-    private $screening2;
-    private $user1;
-    private $user2;
-    private $roleU;
-    private $roleA;
+    private $objMovie1;
+    private $objMovie2;
+    private $objRoom1;
+    private $objRoom2;
+    private $objGenre1;
+    private $objGenre2;
+    private $objScreening1;
+    private $objScreening2;
+    private $objUser1;
+    private $objUser2;
+    private $objRoleU;
+    private $objRoleA;
 
     /**
      * Création des données communes avant chaque test.
@@ -41,14 +41,14 @@ class ScreeningControllerTest extends TestCase
         parent::setUp();
 
         // Création des films
-        $this->movie1 = Movie::create([
+        $this->objMovie1 = Movie::create([
             'movie_name' => 'Film Test A',
             'director' => 'Réalisateur A',
             'duration_minutes' => 120,
             'description' => 'Description A'
         ]);
 
-        $this->movie2 = Movie::create([
+        $this->objMovie2 = Movie::create([
             'movie_name' => 'Film Test B',
             'director' => 'Réalisateur B',
             'duration_minutes' => 90,
@@ -56,50 +56,50 @@ class ScreeningControllerTest extends TestCase
         ]);
 
         // Création des genres
-        $this->genre1 = Genre::create([
+        $this->objGenre1 = Genre::create([
             'genre_label' => 'Action'
         ]);
 
-        $this->genre2 = Genre::create([
+        $this->objGenre2 = Genre::create([
             'genre_label' => 'Comédie'
         ]);
 
         // Association des genres aux films
-        $this->movie1->genres()->attach($this->genre1->genre_id);
-        $this->movie2->genres()->attach($this->genre2->genre_id);
+        $this->objMovie1->genres()->attach($this->objGenre1->genre_id);
+        $this->objMovie2->genres()->attach($this->objGenre2->genre_id);
 
         // Création des salles
-        $this->room1 = Room::create([
+        $this->objRoom1 = Room::create([
             'room_name' => 'Salle Test A',
             'capacity' => 100
         ]);
 
-        $this->room2 = Room::create([
+        $this->objRoom2 = Room::create([
             'room_name' => 'Salle Test B',
             'capacity' => 150
         ]);
 
         // Création des séances
-        $this->screening1 = Screening::create([
-            'movie_id' => $this->movie1->movie_id,
-            'room_id' => $this->room1->room_id,
+        $this->objScreening1 = Screening::create([
+            'movie_id' => $this->objMovie1->movie_id,
+            'room_id' => $this->objRoom1->room_id,
             'screening_date' => '2026-12-10 14:00:00'
         ]);
 
-        $this->screening2 = Screening::create([
-            'movie_id' => $this->movie2->movie_id,
-            'room_id' => $this->room2->room_id,
+        $this->objScreening2 = Screening::create([
+            'movie_id' => $this->objMovie2->movie_id,
+            'room_id' => $this->objRoom2->room_id,
             'screening_date' => '2026-12-11 18:00:00'
         ]);
 
         // Création d'un utilisateur et d'un rôle associé
 
-        $this->roleU = Role::Create([
+        $this->objRoleU = Role::Create([
             'role_code' => 'U',
-            'role_label' => 'Utilisateur'  
+            'role_label' => 'Utilisateur'
         ]);
 
-        $this->user1 = User::create([
+        $this->objUser1 = User::create([
             'name' => 'Utilisateur Test',
             'email' => 'test@example.com',
             'password' => bcrypt('password'),
@@ -108,12 +108,13 @@ class ScreeningControllerTest extends TestCase
 
         // Création d'un administrateur et d'un rôle associé
 
-        $this->roleA = Role::Create([
+        $this->objRoleA
+ = Role::Create([
             'role_code' => 'A',
-            'role_label' => 'Administrateur'  
+            'role_label' => 'Administrateur'
         ]);
 
-        $this->user2 = User::create([
+        $this->objUser2 = User::create([
             'name' => 'Utilisateur Test',
             'email' => 'test2@example.com',
             'password' => bcrypt('password'),
@@ -135,7 +136,7 @@ class ScreeningControllerTest extends TestCase
         $response->assertViewHas('arScreenings', function ($screenings) {
             return $screenings->contains(
                 'screening_id',
-                $this->screening1->screening_id
+                $this->objScreening1->screening_id
             );
         });
     }
@@ -152,7 +153,7 @@ class ScreeningControllerTest extends TestCase
         $response->assertViewHas('arScreenings', function ($screenings) {
             $screening = $screenings->firstWhere(
                 'screening_id',
-                $this->screening1->screening_id
+                $this->objScreening1->screening_id
             );
 
             return $screening !== null
@@ -161,7 +162,7 @@ class ScreeningControllerTest extends TestCase
         });
     }
 
-    /** 
+    /**
     * Test 3 : Vérifier le du filtre par nom du film.
     */
     public function test_filter_screenings_by_movie_name()
@@ -171,7 +172,7 @@ class ScreeningControllerTest extends TestCase
         $response->assertStatus(200);
         $response->assertViewHas('arScreenings', function ($screenings) {
             return $screenings->count() === 1
-                && $screenings->first()->screening_id === $this->screening1->screening_id;
+                && $screenings->first()->screening_id === $this->objScreening1->screening_id;
         });
     }
 
@@ -180,12 +181,12 @@ class ScreeningControllerTest extends TestCase
     */
     public function test_filter_screenings_by_genre()
     {
-        $response = $this->get('/screenings_list?genre_id=' . $this->genre1->genre_id);
+        $response = $this->get('/screenings_list?genre_id=' . $this->objGenre1->genre_id);
 
         $response->assertStatus(200);
         $response->assertViewHas('arScreenings', function ($screenings) {
             return $screenings->count() === 1
-                && $screenings->first()->screening_id === $this->screening1->screening_id;
+                && $screenings->first()->screening_id === $this->objScreening1->screening_id;
         });
     }
 
@@ -194,12 +195,12 @@ class ScreeningControllerTest extends TestCase
     */
     public function test_filter_screenings_by_room()
     {
-        $response = $this->get('/screenings_list?room_id=' . $this->room1->room_id);
+        $response = $this->get('/screenings_list?room_id=' . $this->objRoom1->room_id);
 
         $response->assertStatus(200);
         $response->assertViewHas('arScreenings', function ($screenings) {
             return $screenings->count() === 1
-                && $screenings->first()->screening_id === $this->screening1->screening_id;
+                && $screenings->first()->screening_id === $this->objScreening1->screening_id;
         });
     }
 
@@ -214,7 +215,7 @@ class ScreeningControllerTest extends TestCase
         $response->assertStatus(200);
         $response->assertViewHas('arScreenings', function ($screenings) {
             return $screenings->count() === 1
-                && $screenings->first()->screening_id === $this->screening1->screening_id;
+                && $screenings->first()->screening_id === $this->objScreening1->screening_id;
         });
     }
 
@@ -226,33 +227,33 @@ class ScreeningControllerTest extends TestCase
     {
         $response = $this->get(
             '/screenings_list?movie_name=Film Test A'
-            . '&genre_id=' . $this->genre1->genre_id
-            . '&room_id=' . $this->room1->room_id
+            . '&genre_id=' . $this->objGenre1->genre_id
+            . '&room_id=' . $this->objRoom1->room_id
             . '&screening_date=2026-12-10'
         );
 
         $response->assertStatus(200);
         $response->assertViewHas('arScreenings', function ($screenings) {
             return $screenings->count() === 1
-                && $screenings->first()->screening_id === $this->screening1->screening_id;
+                && $screenings->first()->screening_id === $this->objScreening1->screening_id;
         });
     }
 
     /*
     * Test 8 : Vérifier l'envoi des valeurs des filtres dans la vue.
-    */ 
+    */
     public function test_filter_values_are_returned_to_view()
     {
         $response = $this->get('/screenings_list?movie_name=Film Test A'
-            . '&genre_id=' . $this->genre1->genre_id
-            . '&room_id=' . $this->room1->room_id
+            . '&genre_id=' . $this->objGenre1->genre_id
+            . '&room_id=' . $this->objRoom1->room_id
             . '&screening_date=2026-12-10'
         );
 
         $response->assertStatus(200);
         $response->assertViewHas('strName', 'Film Test A');
-        $response->assertViewHas('iGenreId', (string) $this->genre1->genre_id);
-        $response->assertViewHas('iRoomId', (string) $this->room1->room_id);
+        $response->assertViewHas('iGenreId', (string) $this->objGenre1->genre_id);
+        $response->assertViewHas('iRoomId', (string) $this->objRoom1->room_id);
         $response->assertViewHas('strDate', '2026-12-10');
     }
 
@@ -270,13 +271,13 @@ class ScreeningControllerTest extends TestCase
 
         $screening = $arScreenings->firstWhere(
             'screening_id',
-            $this->screening1->screening_id
+            $this->objScreening1->screening_id
         );
 
         $this->assertNotNull($screening);
 
         $this->assertEquals(
-            $this->room1->capacity,
+            $this->objRoom1->capacity,
             $screening->available_seats
         );
     }
@@ -290,13 +291,13 @@ class ScreeningControllerTest extends TestCase
         // Création de deux réservations pour la même séance
         DB::table('reservations')->insert([
             [
-                'screening_id' => $this->screening1->screening_id,
-                'id' => $this->user1->id,
+                'screening_id' => $this->objScreening1->screening_id,
+                'id' => $this->objUser1->id,
                 'seats_quantity' => 3,
             ],
             [
-                'screening_id' => $this->screening1->screening_id,
-                'id' => $this->user1->id,
+                'screening_id' => $this->objScreening1->screening_id,
+                'id' => $this->objUser1->id,
                 'seats_quantity' => 2,
             ],
         ]);
@@ -309,13 +310,13 @@ class ScreeningControllerTest extends TestCase
 
         $screening = $arScreenings->firstWhere(
             'screening_id',
-            $this->screening1->screening_id
+            $this->objScreening1->screening_id
         );
 
         $this->assertNotNull($screening);
 
         $this->assertEquals(
-            $this->room1->capacity - 5,
+            $this->objRoom1->capacity - 5,
             $screening->available_seats
         );
     }
@@ -326,7 +327,7 @@ class ScreeningControllerTest extends TestCase
      */
     public function test_add_screening_refuses_non_admin()
     {
-        $response = $this->actingAs($this->user1)
+        $response = $this->actingAs($this->objUser1)
             ->get('/add_screening');
 
         $response->assertRedirect('/');
@@ -338,7 +339,7 @@ class ScreeningControllerTest extends TestCase
     public function test_add_screening_admin()
     {
 
-        $response = $this->actingAs($this->user2)
+        $response = $this->actingAs($this->objUser2)
             ->get('/add_screening');
 
         $response->assertOk();
@@ -348,11 +349,11 @@ class ScreeningControllerTest extends TestCase
         $response->assertViewHas('arMovies');
 
         $response->assertViewHas('arRooms', function ($rooms) {
-            return $rooms->contains('room_id', $this->room1->room_id);
+            return $rooms->contains('room_id', $this->objRoom1->room_id);
         });
 
         $response->assertViewHas('arMovies', function ($movies) {
-            return $movies->contains('movie_id', $this->movie1->movie_id);
+            return $movies->contains('movie_id', $this->objMovie1->movie_id);
         });
     }
 
@@ -362,10 +363,10 @@ class ScreeningControllerTest extends TestCase
      */
     public function test_insert_screening_refuses_non_admin()
     {
-        $response = $this->actingAs($this->user1)
+        $response = $this->actingAs($this->objUser1)
             ->post('/insert_screening', [
-                'movie_id' => $this->movie1->movie_id,
-                'room_id' => $this->room1->room_id,
+                'movie_id' => $this->objMovie1->movie_id,
+                'room_id' => $this->objRoom1->room_id,
                 'screening_date' => '2026-12-12T15:30',
             ]);
 
@@ -378,10 +379,10 @@ class ScreeningControllerTest extends TestCase
     public function test_insert_screening_admin()
     {
 
-        $response = $this->actingAs($this->user2)
+        $response = $this->actingAs($this->objUser2)
             ->post('/insert_screening', [
-                'movie_id' => $this->movie1->movie_id,
-                'room_id' => $this->room1->room_id,
+                'movie_id' => $this->objMovie1->movie_id,
+                'room_id' => $this->objRoom1->room_id,
                 'screening_date' => '2026-12-12T15:30',
             ]);
 
@@ -393,8 +394,8 @@ class ScreeningControllerTest extends TestCase
         );
 
         $this->assertDatabaseHas('screenings', [
-            'movie_id' => $this->movie1->movie_id,
-            'room_id' => $this->room1->room_id,
+            'movie_id' => $this->objMovie1->movie_id,
+            'room_id' => $this->objRoom1->room_id,
             'screening_date' => '2026-12-12 15:30:00',
         ]);
     }
@@ -404,10 +405,10 @@ class ScreeningControllerTest extends TestCase
      */
     public function test_insert_screening_refuses_duplicate_screening()
     {
-        $response = $this->actingAs($this->user2)
+        $response = $this->actingAs($this->objUser2)
             ->post('/insert_screening', [
-                'movie_id' => $this->movie2->movie_id,
-                'room_id' => $this->room1->room_id,
+                'movie_id' => $this->objMovie2->movie_id,
+                'room_id' => $this->objRoom1->room_id,
                 'screening_date' => '2026-12-10T14:00',
             ]);
 
@@ -427,10 +428,10 @@ class ScreeningControllerTest extends TestCase
      */
     public function test_update_screening_refuses_non_admin()
     {
-        $response = $this->actingAs($this->user1)
-            ->post('/update_screening/' . $this->screening1->screening_id, [
-                'movie_id' => $this->movie2->movie_id,
-                'room_id' => $this->room2->room_id,
+        $response = $this->actingAs($this->objUser1)
+            ->post('/update_screening/' . $this->objScreening1->screening_id, [
+                'movie_id' => $this->objMovie2->movie_id,
+                'room_id' => $this->objRoom2->room_id,
                 'screening_date' => '2026-12-12T15:30',
             ]);
 
@@ -442,10 +443,10 @@ class ScreeningControllerTest extends TestCase
      */
     public function test_update_screening_modifies_screening()
     {
-        $response = $this->actingAs($this->user2)
-            ->post('/update_screening/' . $this->screening1->screening_id, [
-                'movie_id' => $this->movie2->movie_id,
-                'room_id' => $this->room2->room_id,
+        $response = $this->actingAs($this->objUser2)
+            ->post('/update_screening/' . $this->objScreening1->screening_id, [
+                'movie_id' => $this->objMovie2->movie_id,
+                'room_id' => $this->objRoom2->room_id,
                 'screening_date' => '2026-12-12T15:30',
             ]);
 
@@ -457,9 +458,9 @@ class ScreeningControllerTest extends TestCase
         );
 
         $this->assertDatabaseHas('screenings', [
-            'screening_id' => $this->screening1->screening_id,
-            'movie_id' => $this->movie2->movie_id,
-            'room_id' => $this->room2->room_id,
+            'screening_id' => $this->objScreening1->screening_id,
+            'movie_id' => $this->objMovie2->movie_id,
+            'room_id' => $this->objRoom2->room_id,
             'screening_date' => '2026-12-12 15:30:00',
         ]);
     }
@@ -470,10 +471,10 @@ class ScreeningControllerTest extends TestCase
      */
     public function test_update_screening_refuses_duplicate_screening()
     {
-        $response = $this->actingAs($this->user2)
-            ->post('/update_screening/' . $this->screening1->screening_id, [
-                'movie_id' => $this->movie2->movie_id,
-                'room_id' => $this->room2->room_id,
+        $response = $this->actingAs($this->objUser2)
+            ->post('/update_screening/' . $this->objScreening1->screening_id, [
+                'movie_id' => $this->objMovie2->movie_id,
+                'room_id' => $this->objRoom2->room_id,
                 'screening_date' => '2026-12-11T18:00',
             ]);
 
@@ -486,9 +487,9 @@ class ScreeningControllerTest extends TestCase
 
         // Vérifier que la séance initiale n'a pas été modifiée
         $this->assertDatabaseHas('screenings', [
-            'screening_id' => $this->screening1->screening_id,
-            'movie_id' => $this->movie1->movie_id,
-            'room_id' => $this->room1->room_id,
+            'screening_id' => $this->objScreening1->screening_id,
+            'movie_id' => $this->objMovie1->movie_id,
+            'room_id' => $this->objRoom1->room_id,
             'screening_date' => '2026-12-10 14:00:00',
         ]);
     }
@@ -498,18 +499,18 @@ class ScreeningControllerTest extends TestCase
      */
     public function test_make_reservation()
     {
-        $response = $this->actingAs($this->user1)
-            ->get('/make_reservation/' . $this->screening1->screening_id);
+        $response = $this->actingAs($this->objUser1)
+            ->get('/make_reservation/' . $this->objScreening1->screening_id);
 
         $response->assertOk();
 
         $response->assertViewIs('pages.make_reservation');
 
         $response->assertViewHas('objScreening', function ($screening) {
-            return $screening->screening_id == $this->screening1->screening_id;
+            return $screening->screening_id == $this->objScreening1->screening_id;
         });
 
-        $response->assertViewHas('iAvailableSeats', $this->room1->capacity);
+        $response->assertViewHas('iAvailableSeats', $this->objRoom1->capacity);
     }
 
     /**
@@ -517,13 +518,13 @@ class ScreeningControllerTest extends TestCase
      */
     public function test_make_reservation_unauthenticated()
     {
-        $response = $this->get('/make_reservation/' . $this->screening1->screening_id);
+        $response = $this->get('/make_reservation/' . $this->objScreening1->screening_id);
 
         $response->assertOk();
 
         $response->assertViewIs('pages.message');
 
-        $response->assertViewHas('strMessage', 
+        $response->assertViewHas('strMessage',
             "Vous devez vous connecter pour effectuer une réservation."
         );
 
@@ -537,8 +538,8 @@ class ScreeningControllerTest extends TestCase
      */
     public function test_confirm_reservation()
     {
-        $response = $this->actingAs($this->user1)
-            ->post('/confirm_reservation/' . $this->screening1->screening_id, [
+        $response = $this->actingAs($this->objUser1)
+            ->post('/confirm_reservation/' . $this->objScreening1->screening_id, [
                 'seats_quantity' => 3
             ]);
 
@@ -559,7 +560,7 @@ class ScreeningControllerTest extends TestCase
      */
     public function test_confirm_reservation_nauthenticated()
     {
-        $response = $this->post('/confirm_reservation/' . $this->screening1->screening_id, [
+        $response = $this->post('/confirm_reservation/' . $this->objScreening1->screening_id, [
             'seats_quantity' => 3
         ]);
 
@@ -571,8 +572,8 @@ class ScreeningControllerTest extends TestCase
      */
     public function test_confirm_reservation_invalid_seats_quantity()
     {
-        $response = $this->actingAs($this->user1)
-            ->post('/confirm_reservation/' . $this->screening1->screening_id, [
+        $response = $this->actingAs($this->objUser1)
+            ->post('/confirm_reservation/' . $this->objScreening1->screening_id, [
                 'seats_quantity' => 0
             ]);
 
@@ -584,12 +585,12 @@ class ScreeningControllerTest extends TestCase
      */
     public function test_confirm_reservation_refuses_too_many_seats()
     {
-        $response = $this->actingAs($this->user1)
-            ->post('/confirm_reservation/' . $this->screening1->screening_id, [
-                'seats_quantity' => $this->room1->capacity + 1
+        $response = $this->actingAs($this->objUser1)
+            ->post('/confirm_reservation/' . $this->objScreening1->screening_id, [
+                'seats_quantity' => $this->objRoom1->capacity + 1
             ]);
 
-        $response->assertRedirect('/make_reservation/' . $this->screening1->screening_id);
+        $response->assertRedirect('/make_reservation/' . $this->objScreening1->screening_id);
     }
 
     /**
@@ -597,7 +598,7 @@ class ScreeningControllerTest extends TestCase
      */
     public function test_get_admin_dashboard(): void
     {
-        $response = $this->actingAs($this->user2)
+        $response = $this->actingAs($this->objUser2)
             ->get('/admin_dashboard');
 
         $response->assertOk();
@@ -622,17 +623,17 @@ class ScreeningControllerTest extends TestCase
     {
         // Création des réservations pour tester le taux de remplissage
         Reservation::create([
-            'screening_id' => $this->screening1->screening_id,
-            'id' => $this->user1->id,
+            'screening_id' => $this->objScreening1->screening_id,
+            'id' => $this->objUser1->id,
             'seats_quantity' => 3
         ]);
 
         Reservation::create([
-            'screening_id' => $this->screening2->screening_id,
-            'id' => $this->user2->id,
+            'screening_id' => $this->objScreening2->screening_id,
+            'id' => $this->objUser2->id,
             'seats_quantity' => 2
         ]);
-        $response = $this->actingAs($this->user2)
+        $response = $this->actingAs($this->objUser2)
             ->get('/admin_dashboard');
 
         $response->assertOk();
@@ -642,12 +643,12 @@ class ScreeningControllerTest extends TestCase
         // Récupère les séances correspondantes
         $objScreening1 = $arScreenings->firstWhere(
             'screening_id',
-            $this->screening1->screening_id
+            $this->objScreening1->screening_id
         );
 
         $objScreening2 = $arScreenings->firstWhere(
             'screening_id',
-            $this->screening2->screening_id
+            $this->objScreening2->screening_id
         );
 
         // Vérifie le nombre de places occupées
@@ -656,12 +657,12 @@ class ScreeningControllerTest extends TestCase
 
         // Vérifie les pourcentages de remplissage
         $this->assertEquals(
-            round((3 / $this->room1->capacity) * 100, 2),
+            round((3 / $this->objRoom1->capacity) * 100, 2),
             $objScreening1->occupancy_rate
         );
 
         $this->assertEquals(
-            round((2 / $this->room2->capacity) * 100, 2),
+            round((2 / $this->objRoom2->capacity) * 100, 2),
             $objScreening2->occupancy_rate
         );
     }
@@ -681,7 +682,7 @@ class ScreeningControllerTest extends TestCase
      */
     public function test_get_admin_dashboard_unauthorized(): void
     {
-        $response = $this->actingAs($this->user1)
+        $response = $this->actingAs($this->objUser1)
             ->get('/admin_dashboard');
 
         $response->assertRedirect('/');
@@ -692,9 +693,9 @@ class ScreeningControllerTest extends TestCase
      */
     public function test_delete_screening()
     {
-        $this->actingAs($this->user2);
+        $this->actingAs($this->objUser2);
 
-        $response = $this->get('/delete_screening/' . $this->screening1->screening_id);
+        $response = $this->get('/delete_screening/' . $this->objScreening1->screening_id);
 
         $response->assertOk();
         $response->assertViewIs('pages.message');
@@ -703,7 +704,7 @@ class ScreeningControllerTest extends TestCase
         $response->assertViewHas('strLink', '/screenings_list');
 
         $this->assertDatabaseMissing('screenings', [
-            'screening_id' => $this->screening1->screening_id
+            'screening_id' => $this->objScreening1->screening_id
         ]);
     }
 
@@ -712,12 +713,12 @@ class ScreeningControllerTest extends TestCase
      */
     public function test_delete_screening_unauthenticated()
     {
-        $response = $this->get('/delete_screening/' . $this->screening1->screening_id);
+        $response = $this->get('/delete_screening/' . $this->objScreening1->screening_id);
 
         $response->assertRedirect('/');
 
         $this->assertDatabaseHas('screenings', [
-            'screening_id' => $this->screening1->screening_id
+            'screening_id' => $this->objScreening1->screening_id
         ]);
     }
 
@@ -726,7 +727,7 @@ class ScreeningControllerTest extends TestCase
      */
     public function test_delete_unknown_screening()
     {
-        $this->actingAs($this->user2);
+        $this->actingAs($this->objUser2);
 
         $response = $this->get('/delete_screening/999999');
 
