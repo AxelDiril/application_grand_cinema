@@ -6,6 +6,8 @@
     <a class="btn btn-light" href="{{ url('/my_tickets') }}">Mes billets</a>
     @if ( Auth::user()->role_code == "A" || Auth::user()->role_code == "C")
         <a class="btn btn-light" href="/reservations_list">Réservations</a>
+    @endif
+    @if ( Auth::user()->role_code == "A")
         <a class="btn btn-light" href="/admin_dashboard">Tableau de bord</a>
     @endif
     <form method="POST" action="{{ route('logout') }}">
