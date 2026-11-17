@@ -10,7 +10,8 @@
 
     <form method="POST" action="{{ url('insert_screening') }}">
         <!-- Choisir le film -->
-        <select name="movie_id" required>
+        <label for="movie_id">Film :</label>
+        <select id="movie_id" name="movie_id">
             @foreach($arMovies as $movie)
                 <option value="{{ $movie->movie_id }}" >
                 {{ $movie->movie_name }}
@@ -19,7 +20,8 @@
         </select>
 
         <!-- Choisir la salle -->
-        <select name="room_id" required>
+        <label for="room_id">Salle :</label>
+        <select id="room_id" name="room_id">
         @foreach($arRooms as $room)
             <option value="{{ $room->room_id }}">
             {{ $room->room_name }} : {{ $room->capacity }} places
@@ -27,7 +29,8 @@
         @endforeach
         </select>
 
-        <input type="datetime-local" name="screening_date" required>
+        <label for="screening_id">Date :</label>
+        <input id="screening_id" type="datetime-local" name="screening_date" required>
 
         <input type="submit" value="Créer"/>
     </form>

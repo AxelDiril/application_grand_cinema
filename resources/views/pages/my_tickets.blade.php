@@ -6,14 +6,14 @@
 
 @section('contenu')
 
-    <h2>Mes réservations</h2>
+    <h2>Mes billets</h2>
 
     @if($arReservations->isEmpty())
 
         <p>Vous n'avez pas encore effectué de réservation.</p>
 
     @else
-        <table>
+        <table class="table table-striped table-bordered table-hover">
             <tr>
                 <th>N° de réservation</th>
                 <th>Film</th>
@@ -44,8 +44,8 @@
                     {{ number_format($reservation->seats_quantity * 10, 2, ',', ' ') }} €
                 </td>
                 <td>
-                    <a href="{{ url('/download_ticket/' . $reservation->reservation_id) }}">
-                        Télécharger mon billet
+                    <a class="btn btn-primary" href="{{ url('/download_ticket/' . $reservation->reservation_id) }}">
+                        Télécharger
                     </a>
                 </td>
             </tr>

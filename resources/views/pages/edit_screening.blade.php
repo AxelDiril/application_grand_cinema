@@ -19,7 +19,7 @@
                     {{ $movie->movie_name }}
                 </option>
             @endforeach
-        </select><br>
+        </select>
 
         <!-- Choisir la salle -->
         <label for="room_id">Salle :</label>
@@ -30,7 +30,7 @@
                     {{ $room->room_name }} : {{ $room->capacity }} places
                 </option>
             @endforeach
-        </select><br>
+        </select>
 
         <label for="screening_date">Date :</label>
         <input
@@ -39,7 +39,7 @@
             name="screening_date"
             value="{{ $strScreeningDate }}"
             required
-        ><br>
+        >
 
         <input type="submit" value="Modifier">
     </form>

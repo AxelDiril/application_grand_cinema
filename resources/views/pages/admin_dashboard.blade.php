@@ -9,7 +9,7 @@
     @if($arScreenings->isEmpty())
         <p>Aucune séance n'est actuellement enregistrée.</p>
     @else
-        <table>
+        <table class="table table-striped table-bordered table-hover">
             <tr>
                 <th>Nom</th>
                 <th>Salle</th>

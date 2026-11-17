@@ -7,7 +7,11 @@
 
 @section('contenu')
 
-    <h1>Récapitulatif de votre réservation</h1>
+    <h2>Récapitulatif de votre réservation</h2>
+
+    <p>Note : Cette première version de l'application n'intégrant pas de gestionnaire de paiement,
+        la transaction est fictive pour tester les réservations en base de données.
+    </p>
 
     <h2>Détails de la séance</h2>
 

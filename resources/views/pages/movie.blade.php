@@ -8,21 +8,22 @@
 
     <h2>{{ $objMovie->movie_name }}</h2>
 
-    Réalisateur : {{ $objMovie->director }}<br>
-    Durée : {{ $objMovie->duration_minutes }} minutes<br>
-    Description :
+    <p><strong>Réalisateur :</strong> {{ $objMovie->director }}</p>
+    <p><strong>Durée :</strong> {{ $objMovie->duration_minutes }} minutes</p>
+    <p><strong>Description :</strong>
     @if ($objMovie->description == null)
         Non-renseigné
     @else
         {{ $objMovie->description }}
     @endif
+    </p>
 
     <h2>Prochaines séances</h2>
 
     @if ($arScreenings->isEmpty())
         Aucune séance prévue.
     @else
-        <table>
+        <table class="table table-striped table-bordered table-hover">
             <tr>
                 <th>Date</th>
                 <th>Salle</th>
@@ -41,10 +42,11 @@
                     @endif
                 </td>
                 <td>
-                    <a href="/make_reservation/{{ $screening->screening_id }}">Réserver</a>
+                    <a class="btn btn-primary" href="/make_reservation/{{ $screening->screening_id }}">Réserver</a>
                     @auth
                         @if ( Auth::user()->role_code == "A" )
-                            <a href="/edit_screening/{{ $screening->screening_id }}">Modifier</a>
+                            <a class="btn btn-secondary" href="/edit_screening/{{ $screening->screening_id }}">Modifier</a>
+                            <a class="btn btn-danger" href="/delete_screening/{{ $screening->screening_id }}">Supprimer</a>
                         @endif
                     @endif
                 </td>

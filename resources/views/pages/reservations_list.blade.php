@@ -69,7 +69,7 @@
     @if($arReservations->isEmpty())
         Aucune réservation ou billet valide à afficher.
     @else
-        <table>
+        <table class="table table-striped table-bordered table-hover">
             <tr>
                 <th>N° de réservation</th>
                 <th>Utilisateur</th>
@@ -88,7 +88,7 @@
                 <td>{{ $reservation->screening->room->room_name }}</td>
                 <td>{{ $reservation->seats_quantity }}</td>
                 @if(\Carbon\Carbon::parse($reservation->screening->screening_date)->isPast())
-                    <td>Séance passée</td>
+                    <td class="text-danger">Séance passée</td>
                 @else
                     <td>Valide</td>
                 @endif

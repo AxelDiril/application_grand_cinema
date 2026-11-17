@@ -30,7 +30,7 @@
     @if($arMovies->isEmpty())
         Aucun film à afficher.
     @else
-        <table>
+        <table class="table table-striped table-bordered table-hover">
             <tr>
                 <th>Nom</th>
                 <th>Durée</th>
