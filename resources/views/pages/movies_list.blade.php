@@ -10,9 +10,11 @@
 
     <form method="GET">
         <!-- Recherche par nom -->
-        <input type="text" name="movie_name" placeholder="Nom du film..." value="{{ $strName }}">
+        <label for="movie_name">Nom du film :</label>
+        <input type="text" id="movie_name" name="movie_name" placeholder="Nom du film..." value="{{ $strName }}">
         <!-- Filtre par genre -->
-        <select name="genre_id">
+        <label for="genre_id">Genre :</label>
+        <select id="genre_id" name="genre_id">
             <option value="all">Tous les genres</option>
             @foreach($arGenres as $genre)
                 <option value="{{ $genre->genre_id }}" 

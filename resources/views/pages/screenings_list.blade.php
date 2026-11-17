@@ -15,9 +15,11 @@
 
 <form method="GET">
   <!-- Recherche par nom -->
-  <input type="text" name="movie_name" placeholder="Nom du film..." value="{{ $strName }}">
+  <label for="movie_name">Nom du film :</label>
+  <input id="movie_name" type="text" name="movie_name" placeholder="Nom du film..." value="{{ $strName }}">
   <!-- Filtre par genre -->
-  <select name="genre_id">
+  <label for="genre_id">Genre :</label>
+  <select id="genre_id" name="genre_id">
         <option value="all">Tous les genres</option>
         @foreach($arGenres as $genre)
             <option value="{{ $genre->genre_id }}" 
@@ -26,7 +28,8 @@
             </option>
         @endforeach
   </select>
-  <select name="room_id">
+  <label for="room_id">Salle :</label>
+  <select id="room_id" name="room_id">
     <option value="all">Tous les salles</option>
     @foreach($arRooms as $room)
         <option value="{{ $room->room_id }}" 
@@ -36,7 +39,8 @@
     @endforeach
   </select>
   <!-- Filtre par jour -->
-  <input type="date" name="screening_date" value="{{ $strDate }}">
+  <label for="screening_id">Date :</label>
+  <input id="screening_id" type="date" name="screening_date" value="{{ $strDate }}">
 
   <input type="submit" value="Actualiser"/>
 </form>

@@ -11,23 +11,28 @@
 
     <form method="GET">
         <!-- Recherche par nom de l'utilisateur -->
+        <label for="name">Nom d'utilisateur :</label>
         <input
             type="text"
+            id="name"
             name="name"
             placeholder="Nom de l'utilisateur..."
             value="{{ $strName }}"
         >
 
         <!-- Filtre par identifiant de réservation -->
+        <label for="reservation_id">N° de réservation :</label>
         <input
             type="number"
+            id="reservation_id"
             name="reservation_id"
             placeholder="N° réservation..."
             value="{{ $iReservationId }}"
         >
 
         <!-- Filtre par film -->
-        <select name="movie_id">
+        <label for="movie_id">Film :</label>
+        <select id="movie_id" name="movie_id">
             <option value="all">Tous les films</option>
             @foreach($arMovies as $movie)
                 <option value="{{ $movie->movie_id }}"
@@ -38,7 +43,8 @@
         </select>
 
         <!-- Filtre par salle -->
-        <select name="room_id">
+        <label for="room_id">First name:</label>
+        <select id="room_id" name="room_id">
             <option value="all">Toutes les salles</option>
             @foreach($arRooms as $room)
                 <option value="{{ $room->room_id }}"
@@ -49,7 +55,9 @@
         </select>
 
         <!-- Filtre par date de séance -->
+        <label for="screening_date">Date :</label>
         <input
+            id="screening_date"
             type="date"
             name="screening_date"
             value="{{ $strDate }}"
