@@ -43,7 +43,7 @@
         </select>
 
         <!-- Filtre par salle -->
-        <label for="room_id">First name:</label>
+        <label for="room_id">Salle :</label>
         <select id="room_id" name="room_id">
             <option value="all">Toutes les salles</option>
             @foreach($arRooms as $room)
@@ -63,7 +63,7 @@
             value="{{ $strDate }}"
         >
 
-        <input type="submit" value="Actualiser"/>
+        <input type="submit" value="Actualiser">
     </form>
 
     @if($arReservations->isEmpty())

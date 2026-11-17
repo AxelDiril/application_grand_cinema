@@ -24,7 +24,7 @@
             @endforeach
         </select>
 
-        <input type="submit" value="Actualiser"/>
+        <input type="submit" value="Actualiser">
     </form>
 
     @if($arMovies->isEmpty())

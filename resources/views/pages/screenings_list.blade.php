@@ -42,7 +42,7 @@
   <label for="screening_id">Date :</label>
   <input id="screening_id" type="date" name="screening_date" value="{{ $strDate }}">
 
-  <input type="submit" value="Actualiser"/>
+  <input type="submit" value="Actualiser">
 </form>
 
   @if($arScreenings->isEmpty())

@@ -21,7 +21,7 @@
                 <th>Salle</th>
                 <th>Nombre de places</th>
                 <th>Prix total</th>
-                <th>Validité</th>
+                <th>Téléchargement</th>
             </tr>
         @foreach($arReservations as $reservation)
             <tr>
