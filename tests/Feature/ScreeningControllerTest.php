@@ -96,7 +96,7 @@ class ScreeningControllerTest extends TestCase
 
         $this->roleU = Role::Create([
             'role_code' => 'U',
-            'role_label' => 'Utilisateur'  
+            'role_label' => 'Utilisateur'
         ]);
 
         $this->user1 = User::create([
@@ -110,7 +110,7 @@ class ScreeningControllerTest extends TestCase
 
         $this->roleA = Role::Create([
             'role_code' => 'A',
-            'role_label' => 'Administrateur'  
+            'role_label' => 'Administrateur'
         ]);
 
         $this->user2 = User::create([
@@ -161,7 +161,7 @@ class ScreeningControllerTest extends TestCase
         });
     }
 
-    /** 
+    /**
     * Test 3 : Vérifier le du filtre par nom du film.
     */
     public function test_filter_screenings_by_movie_name()
@@ -240,7 +240,7 @@ class ScreeningControllerTest extends TestCase
 
     /*
     * Test 8 : Vérifier l'envoi des valeurs des filtres dans la vue.
-    */ 
+    */
     public function test_filter_values_are_returned_to_view()
     {
         $response = $this->get('/screenings_list?movie_name=Film Test A'
@@ -523,7 +523,7 @@ class ScreeningControllerTest extends TestCase
 
         $response->assertViewIs('pages.message');
 
-        $response->assertViewHas('strMessage', 
+        $response->assertViewHas('strMessage',
             "Vous devez vous connecter pour effectuer une réservation."
         );
 

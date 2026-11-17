@@ -97,7 +97,7 @@ class MovieControllerTest extends TestCase
 
         $this->role = Role::Create([
             'role_code' => 'U',
-            'role_label' => 'Utilisateur'  
+            'role_label' => 'Utilisateur'
         ]);
 
         $this->user = User::create([

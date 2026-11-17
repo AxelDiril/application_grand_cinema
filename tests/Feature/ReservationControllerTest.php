@@ -313,7 +313,7 @@ class ReservationControllerTest extends TestCase
 
         $response->assertViewIs('pages.message');
 
-        $response->assertViewHas('strMessage', 
+        $response->assertViewHas('strMessage',
             'Votre réservation a bien été enregistrée. Vous pouvez télécharger votre billet dans la section "Mes billets"'
         );
 

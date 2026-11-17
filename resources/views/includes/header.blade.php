@@ -13,6 +13,6 @@
     <input class="btn btn-light" type="submit" value="Se déconnecter">
 </form>
 @else
-<a class="btn btn-light" href="{{ route('login') }}">Se connecter</a>
-<a class="btn btn-light" href="{{ route('register') }}">S'inscrire</a>
+    <a class="btn btn-light" href="{{ route('login') }}">Se connecter</a>
+    <a class="btn btn-light" href="{{ route('register') }}">S'inscrire</a>
 @endif

@@ -20,7 +20,7 @@ class ReservationController extends Controller
      * date, film et salle.
      *
      * @param Request $request Les paramètres de filtres de la requête.
-     * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse La vue affichant les 
+     * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse La vue affichant les
      * réservations ou un retour sur la page d'accueil si l'utilisateur n'a pas le rôle requis.
      */
     public function getReservationsList(Request $request)
@@ -159,7 +159,7 @@ class ReservationController extends Controller
             'strLink',
             'strLinkMessage'
         ));
-    }    
+    }
 
     /**
      * Affiche les réservations de l'utilisateur connecté. Il pourra y télécharger ses billets sous
@@ -201,7 +201,7 @@ class ReservationController extends Controller
      * Génère et télécharge le billet PDF correspondant à une réservation.
      *
      * @param int $reservation_id Identifiant de la réservation.
-     * @return \Illuminate\Http\Response|\Illuminate\View\View|\Illuminate\Http\RedirectResponse 
+     * @return \Illuminate\Http\Response|\Illuminate\View\View|\Illuminate\Http\RedirectResponse
      * Télécharge le billet, renvoie un message d'erreur si l'utilisateur n'est pas connecté ou renvoie
      * à la page d'accueil si il tente de télécharger une réservation qui n'existe pas.
      */
