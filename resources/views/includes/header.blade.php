@@ -1,19 +1,18 @@
 <h1>Le Grand Cinéma</h1>
-<a href="/movies_list">Films</a>
-<a href="/screenings_list">Séances</a>
+<a class="btn btn-light" href="/movies_list">Films</a>
+<a class="btn btn-light" href="/screenings_list">Séances</a>
 
 @auth
-    <a href="{{ url('/my_tickets') }}">Mes billets</a>
+    <a class="btn btn-light" href="{{ url('/my_tickets') }}">Mes billets</a>
     @if ( Auth::user()->role_code == "A" || Auth::user()->role_code == "C")
-        <a href="/reservations_list">Réservations</a>
-        <a href="/admin_dashboard">Tableau de bord</a>
+        <a class="btn btn-light" href="/reservations_list">Réservations</a>
+        <a class="btn btn-light" href="/admin_dashboard">Tableau de bord</a>
     @endif
-    Bienvenue, {{ Auth::user()->name }}.
     <form method="POST" action="{{ route('logout') }}">
     @csrf
-    <input type="submit" value="Se déconnecter">
+    <input class="btn btn-light" type="submit" value="Se déconnecter">
 </form>
 @else
-<a href="{{ route('login') }}">Se connecter</a>
-<a href="{{ route('register') }}">S'inscrire</a>
+<a class="btn btn-light" href="{{ route('login') }}">Se connecter</a>
+<a class="btn btn-light" href="{{ route('register') }}">S'inscrire</a>
 @endif
