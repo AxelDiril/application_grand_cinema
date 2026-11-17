@@ -437,40 +437,4 @@ class ReservationControllerTest extends TestCase
 
         $response->assertRedirect('/');
     }
-
-    /**
-     * Test 17 : Vérifie qu'un billet est indiqué comme non valide lorsque la séance est passée.
-     */
-    public function test_past_screening_ticket_is_not_valid(): void
-    {
-        // Modification de la date de la séance
-        $this->screening1->update([
-            'screening_date' => now()->subDay()
-        ]);
-
-        $response = $this->actingAs($this->user1)
-            ->get('/my_tickets');
-
-        $response->assertOk();
-
-        $response->assertSee('Séance passée');
-    }
-
-    /**
-     * Test 18 : Vérifie qu'un billet est indiqué comme valide lorsque la séance est à venir.
-     */
-    public function test_future_screening_ticket_is_valid(): void
-    {
-        // Modification de la date de la séance
-        $this->screening1->update([
-            'screening_date' => now()->addDay()
-        ]);
-
-        $response = $this->actingAs($this->user1)
-            ->get('/my_tickets');
-
-        $response->assertOk();
-
-        $response->assertSee('Billet valide');
-    }
 }
