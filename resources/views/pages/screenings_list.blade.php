@@ -9,7 +9,7 @@
 
 @auth
   @if ( Auth::user()->role_code == "A" )
-  <a href="/add_screening">Ajouter une séance</a>
+    <a href="/add_screening">Ajouter une séance</a>
   @endif
 @endif
 
@@ -44,25 +44,36 @@
   @if($arScreenings->isEmpty())
     Aucune séance à afficher.
   @else
+    <table>
+      <tr>
+        <th>Film</th>
+        <th>Date</th>
+        <th>Durée</th>
+        <th>Salle</th>
+        <th>Places disponibles</th>
+        <th>Actions</th>
+      </tr>
     @foreach($arScreenings as $screening)
-        <a href="/movie/{{ $screening->movie_id }}">{{ $screening->movie->movie_name }}</a>
-        le {{ $screening->screening_date }} ({{ $screening->movie->duration_minutes }} min)
-        à {{ $screening->room->room_name }}
+      <tr>
+        <td><a href="/movie/{{ $screening->movie_id }}">{{ $screening->movie->movie_name }}</a></td>
+        <td>{{ $screening->screening_date }}</td>
+        <td>({{ $screening->movie->duration_minutes }} min)</td>
+        <td>{{ $screening->room->room_name }}</td>
         @if ($screening->available_seats <= 0)
-            Séance complète
+          <td>Séance complète</td>
         @else
-            Places disponibles : {{ $screening->available_seats }}
+          <td>{{ $screening->available_seats }}</td>
         @endif
-        <a href="/make_reservation/{{ $screening->screening_id }}">Réserver</a>
+          <td><a href="/make_reservation/{{ $screening->screening_id }}">Réserver</a>
         @auth
           @if ( Auth::user()->role_code == "A" )
             <a href="/edit_screening/{{ $screening->screening_id }}">Modifier</a>
             <a href="/delete_screening/{{ $screening->screening_id }}">Supprimer</a>
           @endif
         @endif
-        <br>
-
-
+        </td>
+      </tr>
     @endforeach
+    </table>
   @endif
 @stop

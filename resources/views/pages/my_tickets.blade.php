@@ -6,59 +6,50 @@
 
 @section('contenu')
 
-    <h1>Mes réservations</h1>
+    <h2>Mes réservations</h2>
 
     @if($arReservations->isEmpty())
 
         <p>Vous n'avez pas encore effectué de réservation.</p>
 
     @else
-
+        <table>
+            <tr>
+                <th>N° de réservation</th>
+                <th>Film</th>
+                <th>Date</th>
+                <th>Salle</th>
+                <th>Nombre de places</th>
+                <th>Prix total</th>
+                <th>Validité</th>
+            </tr>
         @foreach($arReservations as $reservation)
-
-            <div>
-                <h2>Réservation n°{{ $reservation->reservation_id }}</h2>
-
-                <p>
-                    <strong>Film :</strong>
+            <tr>
+                <td>
+                    {{ $reservation->reservation_id }}
+                </td>
+                <td>
                     {{ $reservation->screening->movie->movie_name }}
-                </p>
-
-                <p>
-                    <strong>Date de la séance :</strong>
+                </td>
+                <td>
                     {{ \Carbon\Carbon::parse($reservation->screening->screening_date)->format('d/m/Y à H:i') }}
-                </p>
-
-                <p>
-                    <strong>Salle :</strong>
+                </td>
+                <td>
                     {{ $reservation->screening->room->room_name }}
-                </p>
-
-                <p>
-                    <strong>Nombre de places :</strong>
+                </td>
+                <td>
                     {{ $reservation->seats_quantity }}
-                </p>
-
-                <p>
-                    <strong>Prix total :</strong>
+                </td>
+                <td>
                     {{ number_format($reservation->seats_quantity * 10, 2, ',', ' ') }} €
-                </p>
-
-                @if(\Carbon\Carbon::parse($reservation->screening->screening_date)->isPast())
-                - Statut : Séance passée
-                @else
-                    - Statut : Billet valide
-                @endif
-
-                <a href="{{ url('/download_ticket/' . $reservation->reservation_id) }}">
-                    Télécharger mon billet
-                </a>
-            </div>
-
-            <hr>
-
+                </td>
+                <td>
+                    <a href="{{ url('/download_ticket/' . $reservation->reservation_id) }}">
+                        Télécharger mon billet
+                    </a>
+                </td>
+            </tr>
         @endforeach
-
+        </table>
     @endif
-
 @endsection

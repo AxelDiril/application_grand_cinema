@@ -28,9 +28,17 @@
     @if($arMovies->isEmpty())
         Aucun film à afficher.
     @else
+        <table>
+            <tr>
+                <th>Nom</th>
+                <th>Durée</th>
+            </tr>
         @foreach($arMovies as $movie)
-            <a href="/movie/{{$movie->movie_id}}">{{$movie->movie_name}}</a> : {{$movie->duration_minutes}} min
-            <br>
+            <tr>
+                <td><a href="/movie/{{$movie->movie_id}}">{{$movie->movie_name}}</a></td>
+                <td>{{$movie->duration_minutes}} min</td>
+            </tr>
         @endforeach
+        </table>
     @endif
 @stop

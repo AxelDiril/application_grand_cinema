@@ -61,29 +61,32 @@
     @if($arReservations->isEmpty())
         Aucune réservation ou billet valide à afficher.
     @else
+        <table>
+            <tr>
+                <th>N° de réservation</th>
+                <th>Utilisateur</th>
+                <th>Film</th>
+                <th>Date</th>
+                <th>Salle</th>
+                <th>Nombre de places</th>
+                <th>Validité</th>
+            </tr>
         @foreach($arReservations as $reservation)
-
-            ID n°{{ $reservation->reservation_id }}
-
-            - Utilisateur : {{ $reservation->user->name }}
-
-            - Film : {{ $reservation->screening->movie->movie_name }}
-
-            - Date de séance : {{ $reservation->screening->screening_date }}
-
-            - Salle : {{ $reservation->screening->room->room_name }}
-
-            - Nombre de places : {{ $reservation->seats_quantity }}
-
-            @if(\Carbon\Carbon::parse($reservation->screening->screening_date)->isPast())
-                - Statut : Séance passée
-            @else
-                - Statut : Billet valide
-            @endif
-
-            <br>
-
+            <tr>
+                <td>{{ $reservation->reservation_id }}</td>
+                <td>{{ $reservation->user->name }}</td>
+                <td>{{ $reservation->screening->movie->movie_name }}</td>
+                <td>{{ $reservation->screening->screening_date }}</td>
+                <td>{{ $reservation->screening->room->room_name }}</td>
+                <td>{{ $reservation->seats_quantity }}</td>
+                @if(\Carbon\Carbon::parse($reservation->screening->screening_date)->isPast())
+                    <td>Séance passée</td>
+                @else
+                    <td>Valide</td>
+                @endif
+            </tr>
         @endforeach
+        </table>
     @endif
 
 @stop

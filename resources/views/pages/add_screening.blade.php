@@ -20,11 +20,11 @@
 
         <!-- Choisir la salle -->
         <select name="room_id" required>
-          @foreach($arRooms as $room)
-              <option value="{{ $room->room_id }}">
-              {{ $room->room_name }} : {{ $room->capacity }} places
-              </option>
-          @endforeach
+        @foreach($arRooms as $room)
+            <option value="{{ $room->room_id }}">
+            {{ $room->room_name }} : {{ $room->capacity }} places
+            </option>
+        @endforeach
         </select>
 
         <input type="datetime-local" name="screening_date" required>

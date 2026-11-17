@@ -5,23 +5,29 @@
 @stop
 
 @section('contenu')
-
-    <h1>Tableau de bord administrateur</h1>
-
-    <h2>Occupation des séances</h2>
-
+    <h2>Tableau de bord administrateur</h2>
     @if($arScreenings->isEmpty())
-
         <p>Aucune séance n'est actuellement enregistrée.</p>
-
     @else
-        @foreach($arScreenings as $screening)
-            {{ $screening->movie->movie_name }}
-            {{ $screening->room->room_name }}
-            {{ \Carbon\Carbon::parse($screening->screening_date)->format('d/m/Y à H:i') }}
-            {{ $screening->occupied_seats }}
-            {{ $screening->room->capacity }}
-            {{ $screening->occupancy_rate }} %<br>
-        @endforeach
+        <table>
+            <tr>
+                <th>Nom</th>
+                <th>Salle</th>
+                <th>Date</th>
+                <th>Places occupées</th>
+                <th>Places totales</th>
+                <th>Taux de remplissage</th>
+            </tr>
+            @foreach($arScreenings as $screening)
+                <tr>
+                    <td>{{ $screening->movie->movie_name }}</td>
+                    <td>{{ $screening->room->room_name }}</td>
+                    <td>{{ \Carbon\Carbon::parse($screening->screening_date)->format('d/m/Y à H:i') }}</td>
+                    <td>{{ $screening->occupied_seats }}</td>
+                    <td>{{ $screening->room->capacity }}</td>
+                    <td>{{ $screening->occupancy_rate }} %</td>
+                </tr>
+            @endforeach
+        </table>
     @endif
 @endsection
