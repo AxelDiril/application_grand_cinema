@@ -35,4 +35,14 @@ class Reservation extends Model
 		'id',
 		'screening_id'
 	];
+
+	public function user()
+	{
+		return $this->belongsTo(User::class, 'id');
+	}
+
+	public function screening()
+	{
+		return $this->belongsTo(Screening::class, 'screening_id');
+	}
 }

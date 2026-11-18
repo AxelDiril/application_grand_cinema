@@ -27,6 +27,7 @@ class Role extends Model
 	public $timestamps = false;
 
 	protected $fillable = [
+		'role_code',
 		'role_label'
 	];
 
