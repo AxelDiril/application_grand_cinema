@@ -37,7 +37,7 @@
 
     @if($iAvailableSeats > 0)
 
-        <form action="{{ url('/confirm_reservation/' . $objScreening->screening_id) }}" method="POST">
+        <form action="{{ url('/confirm_reservation/' . $objScreening->screening_id) }}" class="mb-4" method="POST">
 
             @csrf
 

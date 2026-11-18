@@ -9,9 +9,9 @@
 
     <h2>Liste des réservations</h2>
 
-    <form method="GET">
+    <form method="GET" class="mb-4">
         <!-- Recherche par nom de l'utilisateur -->
-        <label for="name">Nom d'utilisateur :</label>
+        <label for="name">Utilisateur :</label>
         <input
             type="text"
             id="name"
