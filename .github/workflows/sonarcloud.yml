@@ -17,11 +17,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
       - name: SonarCloud Scan
         uses: SonarSource/sonarqube-scan-action@v8.3.0
         env:
@@ -30,4 +25,5 @@ jobs:
           args: >
             -Dsonar.projectKey=AxelDiril_application_grand_cinema
             -Dsonar.organization=axeldiril
+          # When you need the analysis to take place in a directory other than the one from which it was launched, default is .
           projectBaseDir: .
