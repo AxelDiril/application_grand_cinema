@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('password');
             $table->rememberToken();
             $table->timestamps();
-            $table->char('role_code', 1)->index('fk_users_roles');
+            $table->char('role_code', 1);
             $table->string('comment', 250)->nullable();
         });
 

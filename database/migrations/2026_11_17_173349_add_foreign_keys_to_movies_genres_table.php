@@ -12,8 +12,17 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('movies_genres', function (Blueprint $table) {
-            $table->foreign(['genre_id'], 'fk_mg_genres_cascade')->references(['genre_id'])->on('genres')->onUpdate('restrict')->onDelete('cascade');
-            $table->foreign(['genre_id'], 'fk_mg_genres_movies')->references(['genre_id'])->on('genres')->onUpdate('restrict')->onDelete('cascade');
+        $table->foreign('genre_id', 'fk_mg_genres')
+            ->references('genre_id')
+            ->on('genres')
+            ->onUpdate('restrict')
+            ->onDelete('cascade');
+
+        $table->foreign('movie_id', 'fk_mg_movies')
+            ->references('movie_id')
+            ->on('movies')
+            ->onUpdate('restrict')
+            ->onDelete('cascade');
         });
     }
 
