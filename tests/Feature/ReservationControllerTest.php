@@ -481,4 +481,101 @@ class ReservationControllerTest extends TestCase
 
         $response->assertRedirect('/');
     }
+
+    /**
+     * Test 18 : Vérifie qu'une place ne puisse pas être réservée deux fois
+     * pour une même séance.
+     */
+    public function test_prevent_duplicate_reservation_for_same_seat(): void
+    {
+        // Récupère les identifiants des places déjà réservées pour cette séance.
+        $arReservedSeatIds = Reservation::where(
+            'screening_id',
+            $this->objScreening1->screening_id
+        )->pluck('seat_id');
+
+        // Récupère une place encore disponible dans la salle.
+        $objSeat = Seat::where(
+            'room_id',
+            $this->objScreening1->room_id
+        )
+            ->whereNotIn('seat_id', $arReservedSeatIds)
+            ->first();
+
+        // Vérifie qu'une place est disponible.
+        $this->assertNotNull($objSeat);
+
+        // Crée une première réservation.
+        Reservation::create([
+            'screening_id' => $this->objScreening1->screening_id,
+            'id' => $this->objUser1->id,
+            'seat_id' => $objSeat->seat_id
+        ]);
+
+        // Vérifie que la deuxième réservation provoque une erreur SQL.
+        try {
+            Reservation::create([
+                'screening_id' => $this->objScreening1->screening_id,
+                'id' => $this->objUser2->id,
+                'seat_id' => $objSeat->seat_id
+            ]);
+        } catch (\Illuminate\Database\QueryException $exception) {
+            // Vérifie que l'erreur correspond bien à une violation d'unicité.
+            $this->assertSame(1062, $exception->errorInfo[1]);
+
+            return;
+        }
+
+        // Échec si aucune exception n'est déclenchée.
+        $this->fail('Une deuxième réservation de la même place a été autorisée.');
+    }
+
+    /**
+     * Test 19 : Vérifie que deux places différentes puissent être réservées
+     * pour une même séance.
+     */
+    public function test_allow_reservations_for_different_seats(): void
+    {
+        // Récupère deux places libres dans la salle de la séance.
+        $arReservedSeatIds = Reservation::where(
+            'screening_id',
+            $this->objScreening1->screening_id
+        )->pluck('seat_id');
+
+        $arAvailableSeats = Seat::where(
+            'room_id',
+            $this->objScreening1->room_id
+        )
+            ->whereNotIn('seat_id', $arReservedSeatIds)
+            ->take(2)
+            ->get();
+
+        // Vérifie que deux places sont disponibles.
+        $this->assertCount(2, $arAvailableSeats);
+
+        // Crée une première réservation.
+        Reservation::create([
+            'screening_id' => $this->objScreening1->screening_id,
+            'id' => $this->objUser1->id,
+            'seat_id' => $arAvailableSeats[0]->seat_id
+        ]);
+
+        // Crée une deuxième réservation sur une autre place.
+        Reservation::create([
+            'screening_id' => $this->objScreening1->screening_id,
+            'id' => $this->objUser2->id,
+            'seat_id' => $arAvailableSeats[1]->seat_id
+        ]);
+
+        // Vérifie que les deux réservations ont bien été enregistrées.
+        $this->assertDatabaseHas('reservations', [
+            'screening_id' => $this->objScreening1->screening_id,
+            'seat_id' => $arAvailableSeats[0]->seat_id
+        ]);
+
+        $this->assertDatabaseHas('reservations', [
+            'screening_id' => $this->objScreening1->screening_id,
+            'seat_id' => $arAvailableSeats[1]->seat_id
+        ]);
+    }
 }
