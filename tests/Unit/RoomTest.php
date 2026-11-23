@@ -18,18 +18,10 @@ test('la table utilisée est rooms', function () {
     expect($room->getTable())->toBe('rooms');
 });
 
-test('la capacité est convertie en entier', function () {
-    $room = new Room();
-    $room->capacity = '150';
-
-    expect($room->capacity)->toBeInt();
-});
-
 test('les attributs autorisés en remplissage sont corrects', function () {
     $room = new Room();
 
     expect($room->getFillable())->toBe([
-        'room_name',
-        'capacity'
+        'room_name'
     ]);
 });

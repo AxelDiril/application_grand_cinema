@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use Tests\TestCase;
 use App\Models\Movie;
 use App\Models\Room;
+use App\Models\Seat;
 use App\Models\Genre;
 use App\Models\Screening;
 use App\Models\User;
@@ -15,11 +16,9 @@ use Illuminate\Foundation\Testing\DatabaseTransactions;
 
 class ScreeningControllerTest extends TestCase
 {
-
     use DatabaseTransactions;
 
     // Propriétés privées utilisées par les tests
-
     private $objMovie1;
     private $objMovie2;
     private $objRoom1;
@@ -32,6 +31,8 @@ class ScreeningControllerTest extends TestCase
     private $objUser2;
     private $objRoleU;
     private $objRoleA;
+    private $arSeatsRoom1;
+    private $arSeatsRoom2;
 
     /**
      * Création des données communes avant chaque test.
@@ -68,16 +69,34 @@ class ScreeningControllerTest extends TestCase
         $this->objMovie1->genres()->attach($this->objGenre1->genre_id);
         $this->objMovie2->genres()->attach($this->objGenre2->genre_id);
 
-        // Création des salles
+        // Création des salles, sans colonne capacity
         $this->objRoom1 = Room::create([
-            'room_name' => 'Salle Test A',
-            'capacity' => 100
+            'room_name' => 'Salle Test A'
         ]);
 
         $this->objRoom2 = Room::create([
-            'room_name' => 'Salle Test B',
-            'capacity' => 150
+            'room_name' => 'Salle Test B'
         ]);
+
+        // Création de 100 places dans la première salle
+        $this->arSeatsRoom1 = collect();
+
+        for ($i = 1; $i <= 100; $i++) {
+            $this->arSeatsRoom1->push(Seat::create([
+                'room_id' => $this->objRoom1->room_id,
+                'seat_label' => (string) $i
+            ]));
+        }
+
+        // Création de 150 places dans la deuxième salle
+        $this->arSeatsRoom2 = collect();
+
+        for ($i = 1; $i <= 150; $i++) {
+            $this->arSeatsRoom2->push(Seat::create([
+                'room_id' => $this->objRoom2->room_id,
+                'seat_label' => (string) $i
+            ]));
+        }
 
         // Création des séances
         $this->objScreening1 = Screening::create([
@@ -92,9 +111,8 @@ class ScreeningControllerTest extends TestCase
             'screening_date' => '2026-12-11 18:00:00'
         ]);
 
-        // Création d'un utilisateur et d'un rôle associé
-
-        $this->objRoleU = Role::Create([
+        // Création d'un utilisateur et de son rôle
+        $this->objRoleU = Role::create([
             'role_code' => 'U',
             'role_label' => 'Utilisateur'
         ]);
@@ -106,16 +124,14 @@ class ScreeningControllerTest extends TestCase
             'role_code' => 'U'
         ]);
 
-        // Création d'un administrateur et d'un rôle associé
-
-        $this->objRoleA
- = Role::Create([
+        // Création d'un administrateur et de son rôle
+        $this->objRoleA = Role::create([
             'role_code' => 'A',
             'role_label' => 'Administrateur'
         ]);
 
         $this->objUser2 = User::create([
-            'name' => 'Utilisateur Test',
+            'name' => 'Administrateur Test',
             'email' => 'test2@example.com',
             'password' => bcrypt('password'),
             'role_code' => 'A'
@@ -123,8 +139,7 @@ class ScreeningControllerTest extends TestCase
     }
 
     /**
-     * Test 1 : Vérifie qu'une séance présente dans la table screenings
-     * apparaît dans la liste.
+     * Test 1 : Vérifie qu'une séance apparaît dans la liste.
      */
     public function test_get_screenings_list()
     {
@@ -142,7 +157,7 @@ class ScreeningControllerTest extends TestCase
     }
 
     /**
-     * Test 2 : Vérifie que les films et la salle de la séance sont correctement chargés.
+     * Test 2 : Vérifie que le film et la salle de la séance sont chargés.
      */
     public function test_get_screenings_list_loads_movie_and_room()
     {
@@ -163,8 +178,8 @@ class ScreeningControllerTest extends TestCase
     }
 
     /**
-    * Test 3 : Vérifier le du filtre par nom du film.
-    */
+     * Test 3 : Vérifie le filtre par nom du film.
+     */
     public function test_filter_screenings_by_movie_name()
     {
         $response = $this->get('/screenings_list?movie_name=Film Test A');
@@ -176,9 +191,9 @@ class ScreeningControllerTest extends TestCase
         });
     }
 
-    /*
-    * Test 4 : Vérifier le filtre par genre.
-    */
+    /**
+     * Test 4 : Vérifie le filtre par genre.
+     */
     public function test_filter_screenings_by_genre()
     {
         $response = $this->get('/screenings_list?genre_id=' . $this->objGenre1->genre_id);
@@ -190,9 +205,9 @@ class ScreeningControllerTest extends TestCase
         });
     }
 
-    /*
-    * Test 5 : Vérifier le filtre par salle.
-    */
+    /**
+     * Test 5 : Vérifie le filtre par salle.
+     */
     public function test_filter_screenings_by_room()
     {
         $response = $this->get('/screenings_list?room_id=' . $this->objRoom1->room_id);
@@ -204,10 +219,9 @@ class ScreeningControllerTest extends TestCase
         });
     }
 
-    /*
-    * Test 6 : Vérifier le filtre par date.
-    */
-
+    /**
+     * Test 6 : Vérifie le filtre par date.
+     */
     public function test_filter_screenings_by_date()
     {
         $response = $this->get('/screenings_list?screening_date=2026-12-10');
@@ -219,10 +233,9 @@ class ScreeningControllerTest extends TestCase
         });
     }
 
-    /*
-    * Test 7 : Vérifier plusieurs filtres simultanés.
-    */
-    
+    /**
+     * Test 7 : Vérifie plusieurs filtres simultanés.
+     */
     public function test_filter_screenings_with_multiple_filters()
     {
         $response = $this->get(
@@ -239,12 +252,13 @@ class ScreeningControllerTest extends TestCase
         });
     }
 
-    /*
-    * Test 8 : Vérifier l'envoi des valeurs des filtres dans la vue.
-    */
+    /**
+     * Test 8 : Vérifie l'envoi des valeurs des filtres dans la vue.
+     */
     public function test_filter_values_are_returned_to_view()
     {
-        $response = $this->get('/screenings_list?movie_name=Film Test A'
+        $response = $this->get(
+            '/screenings_list?movie_name=Film Test A'
             . '&genre_id=' . $this->objGenre1->genre_id
             . '&room_id=' . $this->objRoom1->room_id
             . '&screening_date=2026-12-10'
@@ -258,8 +272,7 @@ class ScreeningControllerTest extends TestCase
     }
 
     /**
-     * Test 9 : Vérifier que toutes les places sont disponibles lorsqu'il n'y a aucune
-     * réservation pour la séance.
+     * Test 9 : Vérifie que toutes les places sont disponibles sans réservation.
      */
     public function test_screening_no_reservation()
     {
@@ -268,37 +281,34 @@ class ScreeningControllerTest extends TestCase
         $response->assertOk();
 
         $arScreenings = $response->viewData('arScreenings');
-
         $screening = $arScreenings->firstWhere(
             'screening_id',
             $this->objScreening1->screening_id
         );
 
         $this->assertNotNull($screening);
-
         $this->assertEquals(
-            $this->objRoom1->capacity,
+            $this->arSeatsRoom1->count(),
             $screening->available_seats
         );
     }
 
     /**
-     * Test 10 : Vérifie que le nombre de places disponibles est correct après plusieurs
-     * réservations.
+     * Test 10 : Vérifie le nombre de places disponibles après plusieurs réservations.
      */
     public function test_screening_several_reservations()
     {
-        // Création de deux réservations pour la même séance
+        // Deux réservations correspondent à deux places distinctes
         DB::table('reservations')->insert([
             [
                 'screening_id' => $this->objScreening1->screening_id,
                 'id' => $this->objUser1->id,
-                'seats_quantity' => 3,
+                'seat_id' => $this->arSeatsRoom1[0]->seat_id,
             ],
             [
                 'screening_id' => $this->objScreening1->screening_id,
                 'id' => $this->objUser1->id,
-                'seats_quantity' => 2,
+                'seat_id' => $this->arSeatsRoom1[1]->seat_id,
             ],
         ]);
 
@@ -307,22 +317,20 @@ class ScreeningControllerTest extends TestCase
         $response->assertOk();
 
         $arScreenings = $response->viewData('arScreenings');
-
         $screening = $arScreenings->firstWhere(
             'screening_id',
             $this->objScreening1->screening_id
         );
 
         $this->assertNotNull($screening);
-
         $this->assertEquals(
-            $this->objRoom1->capacity - 5,
+            $this->arSeatsRoom1->count() - 2,
             $screening->available_seats
         );
     }
 
     /**
-     * Test 11 : Vérifie qu'un utilisateur non-adminastrateur ne puisse pas accéder à l'ajout
+     * Test 11 : Vérifie qu'un utilisateur non-administrateur ne puisse pas accéder à l'ajout
      * de séances.
      */
     public function test_add_screening_refuses_non_admin()
@@ -338,7 +346,6 @@ class ScreeningControllerTest extends TestCase
      */
     public function test_add_screening_admin()
     {
-
         $response = $this->actingAs($this->objUser2)
             ->get('/add_screening');
 
@@ -358,8 +365,7 @@ class ScreeningControllerTest extends TestCase
     }
 
     /**
-     * Test 13 : Vérifie qu'un utilisateur non-administrateur ne puisse insérer une séance dans
-     * la base de données.
+     * Test 13 : Vérifie qu'un utilisateur non-administrateur ne puisse pas insérer une séance.
      */
     public function test_insert_screening_refuses_non_admin()
     {
@@ -374,11 +380,10 @@ class ScreeningControllerTest extends TestCase
     }
 
     /**
-     * Test 14 : Vérifie qu'un administrateur puisse insérer une séance dans la base de données.
+     * Test 14 : Vérifie qu'un administrateur puisse insérer une séance.
      */
     public function test_insert_screening_admin()
     {
-
         $response = $this->actingAs($this->objUser2)
             ->post('/insert_screening', [
                 'movie_id' => $this->objMovie1->movie_id,
@@ -419,7 +424,6 @@ class ScreeningControllerTest extends TestCase
             'Une séance existe déjà pour cette salle et cet horaire.'
         );
 
-        // Aucune séance supplémentaire ne doit être créée
         $this->assertDatabaseCount('screenings', 2);
     }
 
@@ -466,8 +470,8 @@ class ScreeningControllerTest extends TestCase
     }
 
     /**
-     * Test 18 : Vérifie qu'un administrateur ne puisse pas enregistrer une séance si une autre
-     * existe à la même salle et même horaire.
+     * Test 18 : Vérifie qu'un administrateur ne puisse pas modifier une séance
+     * vers une salle et un horaire déjà occupés.
      */
     public function test_update_screening_refuses_duplicate_screening()
     {
@@ -485,7 +489,6 @@ class ScreeningControllerTest extends TestCase
             'Une séance existe déjà pour cette salle et cet horaire.'
         );
 
-        // Vérifier que la séance initiale n'a pas été modifiée
         $this->assertDatabaseHas('screenings', [
             'screening_id' => $this->objScreening1->screening_id,
             'movie_id' => $this->objMovie1->movie_id,
@@ -503,14 +506,18 @@ class ScreeningControllerTest extends TestCase
             ->get('/make_reservation/' . $this->objScreening1->screening_id);
 
         $response->assertOk();
-
         $response->assertViewIs('pages.make_reservation');
 
         $response->assertViewHas('objScreening', function ($screening) {
             return $screening->screening_id == $this->objScreening1->screening_id;
         });
 
-        $response->assertViewHas('iAvailableSeats', $this->objRoom1->capacity);
+        $response->assertViewHas('iAvailableSeats', $this->arSeatsRoom1->count());
+
+        $response->assertViewHas('arAvailableSeats', function ($seats) {
+            return $seats->count() === $this->arSeatsRoom1->count()
+                && $seats->contains('seat_id', $this->arSeatsRoom1[0]->seat_id);
+        });
     }
 
     /**
@@ -521,15 +528,14 @@ class ScreeningControllerTest extends TestCase
         $response = $this->get('/make_reservation/' . $this->objScreening1->screening_id);
 
         $response->assertOk();
-
         $response->assertViewIs('pages.message');
 
-        $response->assertViewHas('strMessage',
+        $response->assertViewHas(
+            'strMessage',
             "Vous devez vous connecter pour effectuer une réservation."
         );
 
         $response->assertViewHas('strLink', '/login');
-
         $response->assertViewHas('strLinkMessage', 'Connexion');
     }
 
@@ -538,63 +544,81 @@ class ScreeningControllerTest extends TestCase
      */
     public function test_confirm_reservation()
     {
+        $objSeat = $this->arSeatsRoom1[0];
+
         $response = $this->actingAs($this->objUser1)
             ->post('/confirm_reservation/' . $this->objScreening1->screening_id, [
-                'seats_quantity' => 3
+                'seat_id' => $objSeat->seat_id
             ]);
 
         $response->assertOk();
-
         $response->assertViewIs('pages.confirm_reservation');
-
         $response->assertViewHas('objScreening');
-
-        $response->assertViewHas('iSeatsQuantity', 3);
-
-        $response->assertViewHas('fTotalPrice', 30);
+        $response->assertViewHas('objSeat', function ($seat) use ($objSeat) {
+            return $seat->seat_id === $objSeat->seat_id;
+        });
+        $response->assertViewHas('fTotalPrice', 10);
     }
 
     /**
-     * Test 22 : Vérifier qu'un utilisateur non-authentifié ne puisse pas afficher
-     * le récapitulatif.
+     * Test 22 : Vérifie qu'un utilisateur non authentifié ne puisse pas afficher le récapitulatif.
      */
-    public function test_confirm_reservation_nauthenticated()
+    public function test_confirm_reservation_unauthenticated()
     {
         $response = $this->post('/confirm_reservation/' . $this->objScreening1->screening_id, [
-            'seats_quantity' => 3
+            'seat_id' => $this->arSeatsRoom1[0]->seat_id
         ]);
 
         $response->assertRedirect('/');
     }
 
     /**
-     * Test 23 : Vérifie que le nombre de places doit être supérieur ou égal à 1.
+     * Test 23 : Vérifie qu'un identifiant de place invalide est refusé.
      */
-    public function test_confirm_reservation_invalid_seats_quantity()
+    public function test_confirm_reservation_invalid_seat()
     {
         $response = $this->actingAs($this->objUser1)
             ->post('/confirm_reservation/' . $this->objScreening1->screening_id, [
-                'seats_quantity' => 0
+                'seat_id' => 999999
             ]);
 
-        $response->assertSessionHasErrors('seats_quantity');
+        $response->assertSessionHasErrors('seat_id');
     }
 
     /**
-     * Test 24 : Vérifie que le nombre de places demandé ne puisse pas dépasser les places disponibles.
+     * Test 24 : Vérifie qu'une place appartenant à une autre salle est refusée.
      */
-    public function test_confirm_reservation_refuses_too_many_seats()
+    public function test_confirm_reservation_refuses_seat_from_another_room()
     {
         $response = $this->actingAs($this->objUser1)
             ->post('/confirm_reservation/' . $this->objScreening1->screening_id, [
-                'seats_quantity' => $this->objRoom1->capacity + 1
+                'seat_id' => $this->arSeatsRoom2[0]->seat_id
             ]);
 
         $response->assertRedirect('/make_reservation/' . $this->objScreening1->screening_id);
     }
 
     /**
-     * Test 25 : Vérifie l'affichage du tableau de bord administrateur.
+     * Test 25 : Vérifie qu'une place déjà réservée ne peut pas être confirmée.
+     */
+    public function test_confirm_reservation_refuses_reserved_seat()
+    {
+        Reservation::create([
+            'screening_id' => $this->objScreening1->screening_id,
+            'id' => $this->objUser2->id,
+            'seat_id' => $this->arSeatsRoom1[0]->seat_id
+        ]);
+
+        $response = $this->actingAs($this->objUser1)
+            ->post('/confirm_reservation/' . $this->objScreening1->screening_id, [
+                'seat_id' => $this->arSeatsRoom1[0]->seat_id
+            ]);
+
+        $response->assertRedirect('/make_reservation/' . $this->objScreening1->screening_id);
+    }
+
+    /**
+     * Test 26 : Vérifie l'affichage du tableau de bord administrateur.
      */
     public function test_get_admin_dashboard(): void
     {
@@ -607,32 +631,36 @@ class ScreeningControllerTest extends TestCase
 
         $arScreenings = $response->viewData('arScreenings');
 
-        // Vérifie que les séances sont bien présentes
         $this->assertCount(2, $arScreenings);
 
-        // Vérifie que les séances sont classées de la plus récente à la plus ancienne
         $this->assertTrue(
             $arScreenings[0]->screening_date >= $arScreenings[1]->screening_date
         );
     }
 
     /**
-     * Test 26 : Vérifie le calcul du nombre de places occupées et du pourcentage de remplissage.
+     * Test 27 : Vérifie le calcul du nombre de places occupées et du taux de remplissage.
      */
     public function test_get_admin_dashboard_occupancy_calculation(): void
     {
-        // Création des réservations pour tester le taux de remplissage
-        Reservation::create([
-            'screening_id' => $this->objScreening1->screening_id,
-            'id' => $this->objUser1->id,
-            'seats_quantity' => 3
-        ]);
+        // Trois places réservées pour la première séance
+        foreach ($this->arSeatsRoom1->take(3) as $objSeat) {
+            Reservation::create([
+                'screening_id' => $this->objScreening1->screening_id,
+                'id' => $this->objUser1->id,
+                'seat_id' => $objSeat->seat_id
+            ]);
+        }
 
-        Reservation::create([
-            'screening_id' => $this->objScreening2->screening_id,
-            'id' => $this->objUser2->id,
-            'seats_quantity' => 2
-        ]);
+        // Deux places réservées pour la deuxième séance
+        foreach ($this->arSeatsRoom2->take(2) as $objSeat) {
+            Reservation::create([
+                'screening_id' => $this->objScreening2->screening_id,
+                'id' => $this->objUser2->id,
+                'seat_id' => $objSeat->seat_id
+            ]);
+        }
+
         $response = $this->actingAs($this->objUser2)
             ->get('/admin_dashboard');
 
@@ -640,7 +668,6 @@ class ScreeningControllerTest extends TestCase
 
         $arScreenings = $response->viewData('arScreenings');
 
-        // Récupère les séances correspondantes
         $objScreening1 = $arScreenings->firstWhere(
             'screening_id',
             $this->objScreening1->screening_id
@@ -657,18 +684,18 @@ class ScreeningControllerTest extends TestCase
 
         // Vérifie les pourcentages de remplissage
         $this->assertEquals(
-            round((3 / $this->objRoom1->capacity) * 100, 2),
+            round((3 / $this->arSeatsRoom1->count()) * 100, 2),
             $objScreening1->occupancy_rate
         );
 
         $this->assertEquals(
-            round((2 / $this->objRoom2->capacity) * 100, 2),
+            round((2 / $this->arSeatsRoom2->count()) * 100, 2),
             $objScreening2->occupancy_rate
         );
     }
 
     /**
-     * Test 27 : Vérifie qu'un utilisateur non-connecté ne puisse pas accéder au tableau de bord.
+     * Test 28 : Vérifie qu'un utilisateur non-connecté ne puisse pas accéder au tableau de bord.
      */
     public function test_get_admin_dashboard_unauthenticated(): void
     {
@@ -678,7 +705,7 @@ class ScreeningControllerTest extends TestCase
     }
 
     /**
-     * Test 28 : Vérifie qu'un utilisateur non-administrateur ne puisse pas accéder au tableau de bord.
+     * Test 29 : Vérifie qu'un utilisateur non-administrateur ne puisse pas accéder au tableau de bord.
      */
     public function test_get_admin_dashboard_unauthorized(): void
     {
@@ -689,7 +716,7 @@ class ScreeningControllerTest extends TestCase
     }
 
     /**
-     * Test 29 : Vérifie la suppression d'une séance par un administrateur.
+     * Test 30 : Vérifie la suppression d'une séance par un administrateur.
      */
     public function test_delete_screening()
     {
@@ -699,7 +726,6 @@ class ScreeningControllerTest extends TestCase
 
         $response->assertOk();
         $response->assertViewIs('pages.message');
-
         $response->assertViewHas('strMessage', "La séance a bien été supprimée.");
         $response->assertViewHas('strLink', '/screenings_list');
 
@@ -709,7 +735,7 @@ class ScreeningControllerTest extends TestCase
     }
 
     /**
-     * Test 30 : Vérifie qu'un visiteur non connecté ne peut pas supprimer une séance.
+     * Test 31 : Vérifie qu'un visiteur non connecté ne peut pas supprimer une séance.
      */
     public function test_delete_screening_unauthenticated()
     {
@@ -723,7 +749,7 @@ class ScreeningControllerTest extends TestCase
     }
 
     /**
-     * Test 31 : Vérifie qu'on ne puisse pas supprimer une séance inexistante.
+     * Test 32 : Vérifie qu'on ne puisse pas supprimer une séance inexistante.
      */
     public function test_delete_unknown_screening()
     {
