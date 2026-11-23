@@ -41,18 +41,18 @@
 
             @csrf
 
-            <label for="seats_quantity">Nombre de places (10€/personne) :</label>
+            <label for="seat_id">Choisissez votre place :</label>
 
-            <input
-                type="number"
-                id="seats_quantity"
-                name="seats_quantity"
-                min="1"
-                max="{{ $iAvailableSeats }}"
-                value="1"
-                required
-            >
+            <select name="seat_id" id="seat_id" required>
+                <option value="">-- Sélectionnez une place --</option>
 
+                @foreach ($arAvailableSeats as $seat)
+                    <option value="{{ $seat->seat_id }}">
+                        Place {{ $seat->seat_label }}
+                    </option>
+                @endforeach
+            </select>
+            
             <button type="submit">Continuer</button>
 
         </form>

@@ -12,17 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('movies_genres', function (Blueprint $table) {
-        $table->foreign('genre_id', 'fk_mg_genres')
-            ->references('genre_id')
-            ->on('genres')
-            ->onUpdate('restrict')
-            ->onDelete('cascade');
-
-        $table->foreign('movie_id', 'fk_mg_movies')
-            ->references('movie_id')
-            ->on('movies')
-            ->onUpdate('restrict')
-            ->onDelete('cascade');
+            $table->foreign(['genre_id'], 'fk_mg_genres_cascade')->references(['genre_id'])->on('genres')->onUpdate('restrict')->onDelete('cascade');
+            $table->foreign(['movie_id'], 'fk_mg_movies_movie')->references(['movie_id'])->on('movies')->onUpdate('cascade')->onDelete('cascade');
         });
     }
 
@@ -33,7 +24,7 @@ return new class extends Migration
     {
         Schema::table('movies_genres', function (Blueprint $table) {
             $table->dropForeign('fk_mg_genres_cascade');
-            $table->dropForeign('fk_mg_genres_movies');
+            $table->dropForeign('fk_mg_movies_movie');
         });
     }
 };

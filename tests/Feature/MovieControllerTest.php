@@ -6,6 +6,7 @@ use Tests\TestCase;
 use App\Models\Movie;
 use App\Models\Screening;
 use App\Models\Room;
+use App\Models\Seat;
 use App\Models\Genre;
 use App\Models\User;
 use App\Models\Role;
@@ -26,6 +27,8 @@ class MovieControllerTest extends TestCase
     private $objScreening1;
     private $objScreening2;
     private $objScreeningPast;
+
+    private $arSeats;
 
     private $objUser;
     private $objRole;
@@ -67,9 +70,20 @@ class MovieControllerTest extends TestCase
 
         // Création de la salle
         $this->objRoom1 = Room::create([
-            'room_name' => 'Salle Test',
-            'capacity' => 100
+            'room_name' => 'Salle Test'
         ]);
+
+        // Création de 100 places dans la salle
+        $this->arSeats = collect();
+
+        for ($i = 1; $i <= 100; $i++) {
+            $objSeat = Seat::create([
+                'room_id' => $this->objRoom1->room_id,
+                'seat_label' => (string) $i
+            ]);
+
+            $this->arSeats->push($objSeat);
+        }
 
         // Séance future du premier film
         $this->objScreening1 = Screening::create([
@@ -93,8 +107,7 @@ class MovieControllerTest extends TestCase
         ]);
 
         // Création d'un utilisateur et d'un rôle associé
-
-        $this->objRole = Role::Create([
+        $this->objRole = Role::create([
             'role_code' => 'U',
             'role_label' => 'Utilisateur'
         ]);
@@ -279,7 +292,7 @@ class MovieControllerTest extends TestCase
     }
 
     /**
-     * Test 10 : Vérifier que toutes les places sont disponibles lorsqu'il n'y a aucune
+     * Test 10 : Vérifie que toutes les places sont disponibles lorsqu'il n'y a aucune
      * réservation pour la séance.
      */
     public function test_screening_no_reservation()
@@ -298,7 +311,7 @@ class MovieControllerTest extends TestCase
         $this->assertNotNull($screening);
 
         $this->assertEquals(
-            $this->objRoom1->capacity,
+            $this->arSeats->count(),
             $screening->available_seats
         );
     }
@@ -309,17 +322,17 @@ class MovieControllerTest extends TestCase
      */
     public function test_screening_several_reservations()
     {
-        // Création de deux réservations pour la même séance
+        // Création de deux réservations pour deux places différentes
         DB::table('reservations')->insert([
             [
                 'screening_id' => $this->objScreening1->screening_id,
                 'id' => $this->objUser->id,
-                'seats_quantity' => 3,
+                'seat_id' => $this->arSeats[0]->seat_id,
             ],
             [
                 'screening_id' => $this->objScreening1->screening_id,
                 'id' => $this->objUser->id,
-                'seats_quantity' => 2,
+                'seat_id' => $this->arSeats[1]->seat_id,
             ],
         ]);
 
@@ -337,7 +350,7 @@ class MovieControllerTest extends TestCase
         $this->assertNotNull($screening);
 
         $this->assertEquals(
-            $this->objRoom1->capacity - 5,
+            $this->arSeats->count() - 2,
             $screening->available_seats
         );
     }

@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::table('reservations', function (Blueprint $table) {
             $table->foreign(['screening_id'], 'fk_reservations_screenings')->references(['screening_id'])->on('screenings')->onUpdate('restrict')->onDelete('cascade');
+            $table->foreign(['seat_id'], 'fk_reservations_seats')->references(['seat_id'])->on('seats')->onUpdate('cascade')->onDelete('restrict');
             $table->foreign(['id'], 'fk_reservations_users')->references(['id'])->on('users')->onUpdate('restrict')->onDelete('cascade');
         });
     }
@@ -24,6 +25,7 @@ return new class extends Migration
     {
         Schema::table('reservations', function (Blueprint $table) {
             $table->dropForeign('fk_reservations_screenings');
+            $table->dropForeign('fk_reservations_seats');
             $table->dropForeign('fk_reservations_users');
         });
     }

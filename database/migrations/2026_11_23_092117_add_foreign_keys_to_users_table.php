@@ -11,10 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('rooms', function (Blueprint $table) {
-            $table->integer('room_id', true);
-            $table->string('room_name');
-            $table->integer('capacity');
+        Schema::table('users', function (Blueprint $table) {
+            $table->foreign(['role_code'], 'fk_users_roles')->references(['role_code'])->on('roles')->onUpdate('restrict')->onDelete('restrict');
         });
     }
 
@@ -23,6 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('rooms');
+        Schema::table('users', function (Blueprint $table) {
+            $table->dropForeign('fk_users_roles');
+        });
     }
 };
