@@ -13,9 +13,11 @@ return new class extends Migration
     {
         Schema::create('reservations', function (Blueprint $table) {
             $table->integer('reservation_id', true);
-            $table->integer('seats_quantity');
             $table->unsignedBigInteger('id')->index('fk_reservations_users');
-            $table->integer('screening_id')->index('fk_reservations_screenings');
+            $table->integer('screening_id');
+            $table->integer('seat_id')->nullable()->index('fk_reservations_seats');
+
+            $table->unique(['screening_id', 'seat_id'], 'unique_screening_seat');
         });
     }
 
