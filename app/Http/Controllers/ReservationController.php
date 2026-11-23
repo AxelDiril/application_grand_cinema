@@ -10,6 +10,8 @@ use App\Models\Movie;
 use App\Models\Seat;
 use Illuminate\Support\Facades\Auth;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Database\QueryException;
 
 class ReservationController extends Controller
 {
@@ -111,6 +113,11 @@ class ReservationController extends Controller
      */
     public function addReservation(Request $request, $screening_id)
     {
+        // Message de confirmation par défaut.
+        $strMessage = 'Votre réservation a bien été enregistrée. Vous pouvez télécharger votre billet dans la section "Mes billets".';
+        $strLink = "/my_tickets";
+        $strLinkMessage = "Mes billets";
+
         // Vérifie que l'utilisateur est connecté.
         $objAuthUser = Auth::user();
 
@@ -139,26 +146,63 @@ class ReservationController extends Controller
             return redirect('/make_reservation/' . $screening_id);
         }
 
-        // Vérifie que la place n'est pas déjà réservée pour cette séance.
-        $bSeatReserved = $objScreening->reservations()
-            ->where('seat_id', $objSeat->seat_id)
-            ->exists();
+        try {
+            // Démarre une transaction pour sécuriser la création de la réservation.
+            $bReservationCreated = DB::transaction(function () use (
+                $objScreening,
+                $objSeat,
+                $objAuthUser,
+                $screening_id
+            ) {
+                // Vérifie si la place est déjà réservée pour cette séance.
+                $bSeatReserved = $objScreening->reservations()
+                    ->where('seat_id', $objSeat->seat_id)
+                    ->exists();
 
-        if ($bSeatReserved) {
-            return redirect('/make_reservation/' . $screening_id);
+                if ($bSeatReserved) {
+                    return false;
+                }
+
+                // Crée la réservation.
+                Reservation::create([
+                    'screening_id' => $screening_id,
+                    'id' => $objAuthUser->id,
+                    'seat_id' => $objSeat->seat_id
+                ]);
+
+                return true;
+            });
+
+            // Si la place était déjà réservée, redirige vers le choix des places.
+            if (!$bReservationCreated) {
+                return redirect('/make_reservation/' . $screening_id);
+            }
+        } catch (QueryException $exception) {
+            // Vérifie si l'erreur vient de la contrainte d'unicité.
+            $bDuplicateReservation =
+                ($exception->errorInfo[1] ?? null) == 1062
+                || str_contains(
+                    strtolower($exception->getMessage()),
+                    'unique constraint failed'
+                );
+
+            // Si la place vient d'être réservée par un autre utilisateur.
+            if ($bDuplicateReservation) {
+                // Message d'erreur.
+                $strMessage = "Cette place vient d'être réservée par quelqu'un d'autre. Veuillez choisir une autre place.";
+                $strLink = '/make_reservation/' . $screening_id;
+                $strLinkMessage = "Retour à la réservation";
+
+                return view('pages/message', compact(
+                    'strMessage',
+                    'strLink',
+                    'strLinkMessage'
+                ));
+            }
+
+            // Propage les autres erreurs SQL.
+            throw $exception;
         }
-
-        // Crée la réservation.
-        Reservation::create([
-            'screening_id' => $screening_id,
-            'id' => $objAuthUser->id,
-            'seat_id' => $objSeat->seat_id
-        ]);
-
-        // Redirige vers un message de confirmation.
-        $strMessage = 'Votre réservation a bien été enregistrée. Vous pouvez télécharger votre billet dans la section "Mes billets".';
-        $strLink = "/my_tickets";
-        $strLinkMessage = "Mes billets";
 
         return view('pages/message', compact(
             'strMessage',
