@@ -24,7 +24,7 @@
                     <td>{{ $screening->room->room_name }}</td>
                     <td>{{ \Carbon\Carbon::parse($screening->screening_date)->format('d/m/Y à H:i') }}</td>
                     <td>{{ $screening->occupied_seats }}</td>
-                    <td>{{ $screening->room->capacity }}</td>
+                    <td>{{ $screening->room->seats_count }}</td>
                     <td>{{ $screening->occupancy_rate }} %</td>
                 </tr>
             @endforeach

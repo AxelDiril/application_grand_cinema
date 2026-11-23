@@ -19,8 +19,7 @@
                 <th>Film</th>
                 <th>Date</th>
                 <th>Salle</th>
-                <th>Nombre de places</th>
-                <th>Prix total</th>
+                <th>Numéro de place</th>
                 <th>Téléchargement</th>
             </tr>
         @foreach($arReservations as $reservation)
@@ -38,10 +37,7 @@
                     {{ $reservation->screening->room->room_name }}
                 </td>
                 <td>
-                    {{ $reservation->seats_quantity }}
-                </td>
-                <td>
-                    {{ number_format($reservation->seats_quantity * 10, 2, ',', ' ') }} €
+                    {{ $reservation->seat->seat_label }}
                 </td>
                 <td>
                     <a class="btn btn-primary" href="{{ url('/download_ticket/' . $reservation->reservation_id) }}">

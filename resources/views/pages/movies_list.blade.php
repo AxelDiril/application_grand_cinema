@@ -8,7 +8,7 @@
 
     <h2>Liste des films</h2>
 
-    <form method="GET">
+    <form method="GET" class="mb-4">
         <!-- Recherche par nom -->
         <label for="movie_name">Nom du film :</label>
         <input type="text" id="movie_name" name="movie_name" placeholder="Nom du film..." value="{{ $strName }}">

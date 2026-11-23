@@ -7,6 +7,7 @@ use App\Models\Screening;
 use App\Models\Room;
 use App\Models\Genre;
 use App\Models\Movie;
+use App\Models\Seat;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 
@@ -17,8 +18,8 @@ class ScreeningController extends Controller
      * diffusés et leur nombre de places disponibles.
      * Des filtres peuvent être appliqués par nom, genre, salle et date pour affiner la recherche.
      *
-     * @param Request  $request Les paramètres de filtres de la requête.
-     * @return \Illuminate\View\View La vue affichant les détails et séances du film.
+     * @param Request $request Les paramètres de filtres de la requête.
+     * @return \Illuminate\View\View La vue affichant les séances.
      */
     public function getScreeningsList(Request $request)
     {
@@ -27,8 +28,13 @@ class ScreeningController extends Controller
         $iRoomId = $request->query('room_id');
         $strDate = $request->query('screening_date');
 
-        $arScreenings = Screening::with(['movie', 'room'])
-            ->withSum('reservations', 'seats_quantity');
+        $arScreenings = Screening::with([
+            'movie',
+            'room' => function ($query) {
+                $query->withCount('seats');
+            }
+        ])
+            ->withCount('reservations');
 
         // Filtre par nom du film
         if (!empty($strName) && $strName != "all") {
@@ -62,8 +68,8 @@ class ScreeningController extends Controller
         // Calcul des places disponibles pour chaque séance
         foreach ($arScreenings as $screening) {
             $screening->available_seats =
-                $screening->room->capacity
-                - ($screening->reservations_sum_seats_quantity ?? 0);
+                $screening->room->seats_count
+                - $screening->reservations_count;
         }
 
         $arRooms = Room::get();
@@ -305,17 +311,24 @@ class ScreeningController extends Controller
             return redirect('/');
         }
 
-        // Calcule le nombre de places déjà réservées.
-        $iReservedSeats = $objScreening->reservations()
-            ->sum('seats_quantity');
+        // Récupère les identifiants des places déjà réservées pour cette séance.
+        $arReservedSeatIds = $objScreening->reservations()
+            ->pluck('seat_id');
+
+        // Récupère les places de la salle qui ne sont pas encore réservées.
+        $arAvailableSeats = Seat::where('room_id', $objScreening->room_id)
+            ->whereNotIn('seat_id', $arReservedSeatIds)
+            ->orderByRaw('CAST(seat_label AS UNSIGNED) ASC')
+            ->get();
 
         // Calcule le nombre de places disponibles.
-        $iAvailableSeats = $objScreening->room->capacity - $iReservedSeats;
+        $iAvailableSeats = $arAvailableSeats->count();
 
         // Affiche la page de réservation.
         return view('pages/make_reservation', compact(
             'objScreening',
-            'iAvailableSeats'
+            'iAvailableSeats',
+            'arAvailableSeats'
         ));
     }
 
@@ -335,7 +348,7 @@ class ScreeningController extends Controller
         if (!$objAuthUser) {
             return redirect('/');
         }
-    
+
         // Récupère la séance et ses relations.
         $objScreening = Screening::with(['movie', 'room'])
             ->find($screening_id);
@@ -345,31 +358,37 @@ class ScreeningController extends Controller
             return redirect('/');
         }
 
-        // Vérifie le nombre de places demandé.
+        // Vérifie que la place sélectionnée existe.
         $arData = $request->validate([
-            'seats_quantity' => 'required|integer|min:1'
+            'seat_id' => 'required|integer|exists:seats,seat_id'
         ]);
 
-        $iSeatsQuantity = $arData['seats_quantity'];
+        // Récupère la place sélectionnée.
+        $objSeat = Seat::where('seat_id', $arData['seat_id'])
+            ->where('room_id', $objScreening->room_id)
+            ->first();
 
-        // Calcule le nombre de places déjà réservées.
-        $iReservedSeats = $objScreening->reservations()
-            ->sum('seats_quantity');
+        // Vérifie que la place appartient bien à la salle de la séance.
+        if (!$objSeat) {
+            return redirect('/make_reservation/' . $screening_id);
+        }
 
-        // Vérifie qu'il reste suffisamment de places.
-        $iAvailableSeats = $objScreening->room->capacity - $iReservedSeats;
+        // Vérifie que la place n'est pas déjà réservée pour cette séance.
+        $bSeatReserved = $objScreening->reservations()
+            ->where('seat_id', $objSeat->seat_id)
+            ->exists();
 
-        if ($iSeatsQuantity > $iAvailableSeats) {
+        if ($bSeatReserved) {
             return redirect('/make_reservation/' . $screening_id);
         }
 
         // Calcule le prix total (10 € par place).
-        $fTotalPrice = $iSeatsQuantity * 10;
+        $fTotalPrice = 10;
 
         // Affiche le récapitulatif de la réservation.
         return view('pages/confirm_reservation', compact(
             'objScreening',
-            'iSeatsQuantity',
+            'objSeat',
             'fTotalPrice'
         ));
     }
@@ -389,16 +408,21 @@ class ScreeningController extends Controller
             return redirect('/');
         }
 
-        // Récupère les séances avec le nombre de places réservées
-        $arScreenings = Screening::with(['movie', 'room'])
-            ->withSum('reservations', 'seats_quantity')
+        // Récupère les séances avec le nombre de places et de réservations
+        $arScreenings = Screening::with([
+            'movie',
+            'room' => function ($query) {
+                $query->withCount('seats');
+            }
+        ])
+            ->withCount('reservations')
             ->orderBy('screening_date', 'desc')
             ->get();
 
         // Calcule les places occupées et le pourcentage de remplissage
         foreach ($arScreenings as $screening) {
-            $iOccupiedSeats = $screening->reservations_sum_seats_quantity ?? 0;
-            $iTotalSeats = $screening->room->capacity;
+            $iOccupiedSeats = $screening->reservations_count ?? 0;
+            $iTotalSeats = $screening->room->seats_count ?? 0;
 
             $screening->occupied_seats = $iOccupiedSeats;
             $screening->occupancy_rate = $iTotalSeats > 0

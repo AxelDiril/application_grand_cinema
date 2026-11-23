@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use Tests\TestCase;
 use App\Models\Movie;
 use App\Models\Room;
+use App\Models\Seat;
 use App\Models\Genre;
 use App\Models\Screening;
 use App\Models\Reservation;
@@ -33,6 +34,8 @@ class ReservationControllerTest extends TestCase
     private $objRoleC;
     private $objReservation1;
     private $objReservation2;
+    private $arSeatsRoom1;
+    private $arSeatsRoom2;
 
     /**
      * Création des données communes avant chaque test.
@@ -71,14 +74,29 @@ class ReservationControllerTest extends TestCase
 
         // Création des salles
         $this->objRoom1 = Room::create([
-            'room_name' => 'Salle Test A',
-            'capacity' => 100
+            'room_name' => 'Salle Test A'
         ]);
 
         $this->objRoom2 = Room::create([
-            'room_name' => 'Salle Test B',
-            'capacity' => 150
+            'room_name' => 'Salle Test B'
         ]);
+
+        // Création des places de chaque salle
+        $this->arSeatsRoom1 = collect();
+        for ($i = 1; $i <= 100; $i++) {
+            $this->arSeatsRoom1->push(Seat::create([
+                'room_id' => $this->objRoom1->room_id,
+                'seat_label' => (string) $i
+            ]));
+        }
+
+        $this->arSeatsRoom2 = collect();
+        for ($i = 1; $i <= 150; $i++) {
+            $this->arSeatsRoom2->push(Seat::create([
+                'room_id' => $this->objRoom2->room_id,
+                'seat_label' => (string) $i
+            ]));
+        }
 
         // Création des séances
         $this->objScreening1 = Screening::create([
@@ -114,17 +132,17 @@ class ReservationControllerTest extends TestCase
             'role_code' => 'U'
         ]);
 
-        // Création des réservations
+        // Création des réservations : une réservation correspond à une place
         $this->objReservation1 = Reservation::create([
             'screening_id' => $this->objScreening1->screening_id,
             'id' => $this->objUser1->id,
-            'seats_quantity' => 3
+            'seat_id' => $this->arSeatsRoom1[0]->seat_id
         ]);
 
         $this->objReservation2 = Reservation::create([
             'screening_id' => $this->objScreening2->screening_id,
             'id' => $this->objUser2->id,
-            'seats_quantity' => 2
+            'seat_id' => $this->arSeatsRoom2[0]->seat_id
         ]);
 
         // Création d'un agent de contrôle pour accéder à la page
@@ -165,7 +183,7 @@ class ReservationControllerTest extends TestCase
 
     /**
      * Test 2 : Vérifie que les relations utilisateur, séance,
-     * film et salle sont correctement chargées.
+     * film, salle et place sont correctement chargées.
      */
     public function test_get_reservations_list_loads_relations()
     {
@@ -183,7 +201,8 @@ class ReservationControllerTest extends TestCase
                 && $reservation->relationLoaded('user')
                 && $reservation->relationLoaded('screening')
                 && $reservation->screening->relationLoaded('movie')
-                && $reservation->screening->relationLoaded('room');
+                && $reservation->screening->relationLoaded('room')
+                && $reservation->relationLoaded('seat');
         });
     }
 
@@ -301,28 +320,29 @@ class ReservationControllerTest extends TestCase
     }
 
     /**
-     * Test 9 : Vérifie qu'un utilisateur authentifié peut créer une réservation.
+     * Test 9 : Vérifie qu'un utilisateur authentifié peut réserver une place.
      */
     public function test_add_reservation()
     {
+        $objSeat = $this->arSeatsRoom1[1];
+
         $response = $this->actingAs($this->objUser1)
             ->post('/add_reservation/' . $this->objScreening1->screening_id, [
-                'seats_quantity' => 4
+                'seat_id' => $objSeat->seat_id
             ]);
 
         $response->assertOk();
-
         $response->assertViewIs('pages.message');
 
         $response->assertViewHas(
             'strMessage',
-            'Votre réservation a bien été enregistrée. Vous pouvez télécharger votre billet dans la section "Mes billets"'
+            'Votre réservation a bien été enregistrée. Vous pouvez télécharger votre billet dans la section "Mes billets".'
         );
 
         $this->assertDatabaseHas('reservations', [
             'screening_id' => $this->objScreening1->screening_id,
             'id' => $this->objUser1->id,
-            'seats_quantity' => 4
+            'seat_id' => $objSeat->seat_id
         ]);
     }
 
@@ -332,21 +352,42 @@ class ReservationControllerTest extends TestCase
     public function test_add_reservation_unauthenticated()
     {
         $response = $this->post('/add_reservation/' . $this->objScreening1->screening_id, [
-            'seats_quantity' => 2
+            'seat_id' => $this->arSeatsRoom1[1]->seat_id
         ]);
 
         $response->assertRedirect('/');
     }
 
     /**
-     * Test 11 : Vérifie qu'il est impossible de réserver plus de places
-     * que la capacité disponible de la salle.
+     * Test 11 : Vérifie qu'une place d'une autre salle ne peut pas être réservée
+     * pour la séance.
      */
-    public function test_add_reservation_too_many_seats()
+    public function test_add_reservation_seat_from_another_room()
     {
         $response = $this->actingAs($this->objUser1)
             ->post('/add_reservation/' . $this->objScreening1->screening_id, [
-                'seats_quantity' => $this->objRoom1->capacity + 1
+                'seat_id' => $this->arSeatsRoom2[1]->seat_id
+            ]);
+
+        $response->assertRedirect(
+            '/make_reservation/' . $this->objScreening1->screening_id
+        );
+
+        $this->assertDatabaseMissing('reservations', [
+            'screening_id' => $this->objScreening1->screening_id,
+            'seat_id' => $this->arSeatsRoom2[1]->seat_id
+        ]);
+    }
+
+    /**
+     * Test 12 : Vérifie qu'une place déjà réservée ne peut pas être réservée
+     * une seconde fois pour la même séance.
+     */
+    public function test_add_reservation_already_reserved_seat()
+    {
+        $response = $this->actingAs($this->objUser2)
+            ->post('/add_reservation/' . $this->objScreening1->screening_id, [
+                'seat_id' => $this->arSeatsRoom1[0]->seat_id
             ]);
 
         $response->assertRedirect(
@@ -355,7 +396,7 @@ class ReservationControllerTest extends TestCase
     }
 
     /**
-     * Test 12 : Vérifie l'affichage des réservations de l'utilisateur connecté.
+     * Test 13 : Vérifie l'affichage des réservations de l'utilisateur connecté.
      */
     public function test_get_my_tickets(): void
     {
@@ -377,7 +418,7 @@ class ReservationControllerTest extends TestCase
     }
 
     /**
-     * Test 13 : Vérifie qu'un utilisateur non-connecté puisse accéder aux réservations.
+     * Test 14 : Vérifie qu'un utilisateur non-connecté puisse accéder aux réservations.
      */
     public function test_get_my_tickets_unauthenticated(): void
     {
@@ -394,7 +435,7 @@ class ReservationControllerTest extends TestCase
     }
 
     /**
-     * Test 14 ! Vérifie que le billet téléchargé correspond bien à l'utilisateur connecté.
+     * Test 15 : Vérifie que le billet téléchargé correspond bien à l'utilisateur connecté.
      */
     public function test_download_ticket(): void
     {
@@ -411,7 +452,7 @@ class ReservationControllerTest extends TestCase
     }
 
     /**
-     * Test 15 : Vérifie qu'un billet ne puisse pas être téléchargé sans être connecté.
+     * Test 16 : Vérifie qu'un billet ne puisse pas être téléchargé sans être connecté.
      */
     public function test_download_ticket_unauthenticated(): void
     {
@@ -430,7 +471,8 @@ class ReservationControllerTest extends TestCase
     }
 
     /**
-     * Test 16 : Vérifie qu'on ne puisse pas télécharger le billet d'une réservation qui n'existe pas
+     * Test 17 : Vérifie qu'on ne puisse pas télécharger le billet d'une réservation
+     * qui n'existe pas.
      */
     public function test_download_ticket_unknown_reservation(): void
     {

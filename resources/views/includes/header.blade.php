@@ -10,7 +10,7 @@
     @if ( Auth::user()->role_code == "A")
         <a class="btn btn-light" href="/admin_dashboard">Tableau de bord</a>
     @endif
-    <form method="POST" action="{{ route('logout') }}">
+    <form method="POST" action="{{ route('logout') }}" class="d-inline">
     @csrf
     <input class="btn btn-light" type="submit" value="Se déconnecter">
 </form>

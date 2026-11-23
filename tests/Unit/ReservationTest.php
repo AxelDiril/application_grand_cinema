@@ -1,4 +1,3 @@
-
 <?php
 
 use App\Models\Reservation;
@@ -21,22 +20,22 @@ test('la table utilisée est reservations', function () {
 test('les attributs numériques sont convertis en entiers', function () {
     $reservation = new Reservation();
 
-    $reservation->seats_quantity = '3';
     $reservation->id = '2';
     $reservation->screening_id = '5';
+    $reservation->seat_id='3';
 
-    expect($reservation->seats_quantity)->toBeInt()
-        ->and($reservation->id)->toBeInt()
-        ->and($reservation->screening_id)->toBeInt();
+    expect($reservation->id)->toBeInt()
+        ->and($reservation->screening_id)->toBeInt()
+        ->and($reservation->seat_id)->toBeInt();
 });
 
 test('les attributs autorisés en remplissage sont corrects', function () {
     $reservation = new Reservation();
 
     expect($reservation->getFillable())->toBe([
-        'seats_quantity',
         'id',
-        'screening_id'
+        'screening_id',
+        'seat_id'
     ]);
 });
 
@@ -57,3 +56,13 @@ test('la relation screening est de type belongsTo', function () {
             \Illuminate\Database\Eloquent\Relations\BelongsTo::class
         );
 });
+
+test('la relation seat est de type belongsTo', function () {
+    $reservation = new Reservation();
+
+    expect($reservation->seat())
+        ->toBeInstanceOf(
+            \Illuminate\Database\Eloquent\Relations\BelongsTo::class
+        );
+});
+

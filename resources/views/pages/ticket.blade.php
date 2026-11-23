@@ -24,8 +24,8 @@ h2
         <h3>Récapitulatif de la réservation</h3>
 
         N° de réservation : {{ $objReservation->reservation_id }}<br>
+        N° de place : {{ $objReservation->seat->seat_label }}<br>
         Nom du client : {{ $objReservation->user->name }}<br>
-        Nombre de places : {{ $objReservation->seats_quantity }}<br>
         Prix total :
                 {{ number_format($objReservation->seats_quantity * 10, 2, ',', ' ') }} €<br><br>
         Présentez ce billet à l'entrée du cinéma.<br>

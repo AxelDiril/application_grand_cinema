@@ -13,7 +13,6 @@ use Illuminate\Database\Eloquent\Model;
  * 
  * @property int $room_id
  * @property string $room_name
- * @property int $capacity
  *
  * @package App\Models
  */
@@ -22,13 +21,12 @@ class Room extends Model
 	protected $table = 'rooms';
 	protected $primaryKey = 'room_id';
 	public $timestamps = false;
-
-	protected $casts = [
-		'capacity' => 'int'
-	];
-
 	protected $fillable = [
-		'room_name',
-		'capacity'
+		'room_name'
 	];
+
+	public function seats()
+	{
+		return $this->hasMany(Seat::class, 'room_id', 'room_id');
+	}
 }

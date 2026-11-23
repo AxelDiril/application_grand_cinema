@@ -9,9 +9,9 @@
 
     <h2>Liste des réservations</h2>
 
-    <form method="GET">
+    <form method="GET" class="mb-4">
         <!-- Recherche par nom de l'utilisateur -->
-        <label for="name">Nom d'utilisateur :</label>
+        <label for="name">Utilisateur :</label>
         <input
             type="text"
             id="name"
@@ -76,7 +76,7 @@
                 <th>Film</th>
                 <th>Date</th>
                 <th>Salle</th>
-                <th>Nombre de places</th>
+                <th>N° de place</th>
                 <th>Validité</th>
             </tr>
         @foreach($arReservations as $reservation)
@@ -86,7 +86,7 @@
                 <td>{{ $reservation->screening->movie->movie_name }}</td>
                 <td>{{ $reservation->screening->screening_date }}</td>
                 <td>{{ $reservation->screening->room->room_name }}</td>
-                <td>{{ $reservation->seats_quantity }}</td>
+                <td>{{ $reservation->seat->seat_label }}</td>
                 @if(\Carbon\Carbon::parse($reservation->screening->screening_date)->isPast())
                     <td class="text-danger">Séance passée</td>
                 @else

@@ -12,9 +12,9 @@ use Illuminate\Database\Eloquent\Model;
  * Class Reservation
  * 
  * @property int $reservation_id
- * @property int $seats_quantity
  * @property int $id
  * @property int $screening_id
+ * @property int $seat_id
  *
  * @package App\Models
  */
@@ -25,15 +25,15 @@ class Reservation extends Model
 	public $timestamps = false;
 
 	protected $casts = [
-		'seats_quantity' => 'int',
 		'id' => 'int',
-		'screening_id' => 'int'
+		'screening_id' => 'int',
+		'seat_id' => 'int',
 	];
 
 	protected $fillable = [
-		'seats_quantity',
 		'id',
-		'screening_id'
+		'screening_id',
+		'seat_id'
 	];
 
 	public function user()
@@ -44,5 +44,10 @@ class Reservation extends Model
 	public function screening()
 	{
 		return $this->belongsTo(Screening::class, 'screening_id');
+	}
+
+	public function seat()
+	{
+		return $this->belongsTo(Seat::class, 'seat_id', 'seat_id');
 	}
 }
