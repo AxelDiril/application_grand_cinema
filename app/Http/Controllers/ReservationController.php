@@ -7,6 +7,7 @@ use App\Models\Reservation;
 use App\Models\Screening;
 use App\Models\Room;
 use App\Models\Movie;
+use App\Models\Seat;
 use Illuminate\Support\Facades\Auth;
 use Barryvdh\DomPDF\Facade\Pdf;
 
@@ -15,7 +16,7 @@ class ReservationController extends Controller
     
     /**
      * Récupère la liste des réservations avec le nom de l'utilisateur,
-     * le film, la date de séance, la salle et le nombre de places réservées.
+     * le film, la date de séance, la salle et la place réservée.
      * Des filtres peuvent être appliqués par nom, identifiant de réservation,
      * date, film et salle.
      *
@@ -25,7 +26,6 @@ class ReservationController extends Controller
      */
     public function getReservationsList(Request $request)
     {
-
         // Vérifie que l'utilisateur soit connecté et possède le rôle d'administrateur ou
         // d'agent de contrôle.
         $objAuthUser = Auth::user();
@@ -34,7 +34,6 @@ class ReservationController extends Controller
             return redirect('/');
         }
 
-        
         $strName = $request->query('name');
         $iReservationId = $request->query('reservation_id');
         $strDate = $request->query('screening_date');
@@ -43,6 +42,7 @@ class ReservationController extends Controller
 
         $arReservations = Reservation::with([
             'user',
+            'seat',
             'screening.movie',
             'screening.room'
         ]);
@@ -125,20 +125,26 @@ class ReservationController extends Controller
             return redirect('/');
         }
 
-        // Vérifie le nombre de places demandé.
+        // Vérifie la place sélectionnée.
         $arData = $request->validate([
-            'seats_quantity' => 'required|integer|min:1'
+            'seat_id' => 'required|integer|exists:seats,seat_id'
         ]);
 
-        $iSeatsQuantity = $arData['seats_quantity'];
+        // Vérifie que la place appartient bien à la salle de la séance.
+        $objSeat = Seat::where('seat_id', $arData['seat_id'])
+            ->where('room_id', $objScreening->room_id)
+            ->first();
 
-        // Calcule le nombre de places disponibles.
-        $iReservedSeats = $objScreening->reservations()
-            ->sum('seats_quantity');
+        if (!$objSeat) {
+            return redirect('/make_reservation/' . $screening_id);
+        }
 
-        $iAvailableSeats = $objScreening->room->capacity - $iReservedSeats;
+        // Vérifie que la place n'est pas déjà réservée pour cette séance.
+        $bSeatReserved = $objScreening->reservations()
+            ->where('seat_id', $objSeat->seat_id)
+            ->exists();
 
-        if ($iSeatsQuantity > $iAvailableSeats) {
+        if ($bSeatReserved) {
             return redirect('/make_reservation/' . $screening_id);
         }
 
@@ -146,11 +152,11 @@ class ReservationController extends Controller
         Reservation::create([
             'screening_id' => $screening_id,
             'id' => $objAuthUser->id,
-            'seats_quantity' => $iSeatsQuantity
+            'seat_id' => $objSeat->seat_id
         ]);
 
         // Redirige vers un message de confirmation.
-        $strMessage = 'Votre réservation a bien été enregistrée. Vous pouvez télécharger votre billet dans la section "Mes billets"';
+        $strMessage = 'Votre réservation a bien été enregistrée. Vous pouvez télécharger votre billet dans la section "Mes billets".';
         $strLink = "/my_tickets";
         $strLinkMessage = "Mes billets";
 

@@ -37,25 +37,15 @@
 
     <h2>Détails de la réservation</h2>
 
-    <p>
-        <strong>Nombre de places :</strong>
-        {{ $iSeatsQuantity }}
-    </p>
+    <p>Place choisie : {{ $objSeat->seat_label }}</p>
 
-    <p>
-        <strong>Prix total :</strong>
-        {{ number_format($fTotalPrice, 2, ',', ' ') }} €
-    </p>
+    <p>Prix total : {{ number_format($fTotalPrice, 2, ',', ' ') }} €</p>
 
     <form action="{{ url('/add_reservation/' . $objScreening->screening_id) }}" method="POST">
 
         @csrf
 
-        <input
-            type="hidden"
-            name="seats_quantity"
-            value="{{ $iSeatsQuantity }}"
-        >
+        <input type="hidden" name="seat_id" value="{{ $objSeat->seat_id }}">
 
         <button type="submit">Confirmer et valider ma réservation</button>
 
